@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings — Flow Nest</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="../assets/css/settings.css">
+</head>
+<body>
+
+    <div class="bg-shape shape-1" aria-hidden="true"></div>
+    <div class="bg-shape shape-2" aria-hidden="true"></div>
+    <div class="bg-shape shape-3" aria-hidden="true"></div>
+
+    <div class="app-layout">
+
+        <aside class="sidebar" id="sidebar" aria-label="Main navigation">
+            <div class="sidebar-top">
+                <div class="sidebar-logo">
+                    <div class="sidebar-logo-icon">
+                        <i class="ph-fill ph-check-square-offset"></i>
+                    </div>
+                    <div class="sidebar-logo-text">
+                        <h2>Flow Nest</h2>
+                        <p>Productivity App</p>
+                    </div>
+                </div>
+                <button type="button" class="sidebar-close-btn" id="sidebarCloseBtn" aria-label="Close sidebar">
+                    <i class="ph-bold ph-x"></i>
+                </button>
+            </div>
+
+            <nav class="sidebar-nav" aria-label="App sections">
+                <a href="dashboard.html" class="sidebar-link sidebar-link--nav">
+                    <i class="ph-fill ph-house"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="index.html" class="sidebar-link sidebar-link--nav">
+                    <i class="ph-fill ph-check-circle"></i>
+                    <span>Tasks</span>
+                </a>
+                <a href="index.html?view=calendar" class="sidebar-link sidebar-link--nav">
+                    <i class="ph-fill ph-calendar"></i>
+                    <span>Calendar</span>
+                </a>
+                <a href="analytics.html" class="sidebar-link sidebar-link--nav">
+                    <i class="ph-fill ph-chart-line-up"></i>
+                    <span>Analytics</span>
+                </a>
+                <a href="assistant.html" class="sidebar-link sidebar-link--nav">
+                    <i class="ph-fill ph-robot"></i>
+                    <span>AI Assistant</span>
+                </a>
+                <a href="settings.html" class="sidebar-link sidebar-link--nav active">
+                    <i class="ph-fill ph-gear"></i>
+                    <span>Settings</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-bottom">
+                <div class="sidebar-user-card">
+                    <div class="user-avatar">
+                        <i class="ph-fill ph-user"></i>
+                    </div>
+                    <div class="user-info">
+                        <span class="user-name" id="sidebarUserName">Guest</span>
+                        <span class="sidebar-level-tag hidden" id="sidebarLevelTag">Lvl 1 Novice</span>
+                    </div>
+                </div>
+                <div class="sidebar-xp-container hidden" id="sidebarXpContainer">
+                    <div class="sidebar-xp-bar-wrapper">
+                        <div class="sidebar-xp-bar" id="sidebarXpBar" style="width: 0%;"></div>
+                    </div>
+                    <span class="sidebar-xp-text" id="sidebarXpText">0 / 100 XP</span>
+                </div>
+            </div>
+        </aside>
+
+        <div class="sidebar-overlay hidden" id="sidebarOverlay" aria-hidden="true"></div>
+
+        <div class="app-main">
+            <header class="app-header app-header--toolbar">
+                <div class="header-content">
+                    <div class="icon-container">
+                        <i class="ph-fill ph-gear"></i>
+                    </div>
+                    <div class="header-text">
+                        <h1>Flow Nest</h1>
+                        <p class="tagline">Plan today. Achieve tomorrow.</p>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <button type="button" id="sidebarToggleBtn" class="action-btn header-icon-btn" aria-label="Open sidebar">
+                        <i class="ph-bold ph-list"></i>
+                    </button>
+                    <button type="button" id="notificationBtn" class="action-btn header-icon-btn" aria-label="Open notifications" onclick="toggleNotificationDropdown()">
+                        <i class="ph-bold ph-bell"></i>
+                        <span class="notification-badge hidden" id="notificationBadge">0</span>
+                    </button>
+                    <button type="button" id="logoutBtn" class="action-btn header-icon-btn hidden" aria-label="Logout">
+                        <i class="ph-bold ph-sign-out"></i>
+                    </button>
+                    <button type="button" id="themeToggleBtn" class="action-btn header-icon-btn" aria-label="Toggle dark mode">
+                        <i class="ph-bold ph-moon"></i>
+                    </button>
+                </div>
+                <div id="notificationDropdown" class="notifications-dropdown hidden" aria-live="polite" aria-label="Notifications panel"></div>
+            </header>
+
+            <main class="main-content" id="mainContent">
+                <div class="container settings-container">
+
+                    <header class="settings-page-header">
+                        <h2>Settings</h2>
+                        <p class="settings-subtitle">Customize your Flow Nest experience</p>
+                    </header>
+
+                    <div class="settings-grid">
+
+                        <section class="settings-card" aria-labelledby="accountHeading">
+                            <div class="settings-card__header">
+                                <div class="settings-card__icon">
+                                    <i class="ph-fill ph-user-circle"></i>
+                                </div>
+                                <h3 id="accountHeading">Account Settings</h3>
+                            </div>
+                            <div class="settings-card__body">
+                                <div class="settings-profile">
+                                    <div class="settings-avatar" id="settingsAvatar" aria-hidden="true">
+                                        <i class="ph-fill ph-user"></i>
+                                    </div>
+                                    <div class="settings-profile__details">
+                                        <label class="settings-label" for="settingsUsername">Username</label>
+                                        <p class="settings-value" id="settingsUsername">Guest</p>
+                                        <label class="settings-label" for="settingsEmail">Email</label>
+                                        <p class="settings-value" id="settingsEmail">—</p>
+                                    </div>
+                                </div>
+                                <button type="button" id="settingsLogoutBtn" class="settings-btn settings-btn--danger">
+                                    <i class="ph-bold ph-sign-out"></i>
+                                    Log out
+                                </button>
+                            </div>
+                        </section>
+
+                        <section class="settings-card" aria-labelledby="appearanceHeading">
+                            <div class="settings-card__header">
+                                <div class="settings-card__icon">
+                                    <i class="ph-fill ph-palette"></i>
+                                </div>
+                                <h3 id="appearanceHeading">Appearance</h3>
+                            </div>
+                            <div class="settings-card__body settings-card__body--rows">
+                                <div class="settings-row">
+                                    <div class="settings-row__text">
+                                        <span class="settings-row__title">Dark mode</span>
+                                        <span class="settings-row__desc">Use a darker theme across the app</span>
+                                    </div>
+                                    <label class="settings-toggle" for="settingsThemeToggle">
+                                        <input type="checkbox" id="settingsThemeToggle" class="settings-toggle__input" aria-label="Toggle dark mode">
+                                        <span class="settings-toggle__track" aria-hidden="true">
+                                            <span class="settings-toggle__thumb"></span>
+                                        </span>
+                                    </label>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row__text">
+                                        <span class="settings-row__title">Compact mode</span>
+                                        <span class="settings-row__desc">Tighter spacing for lists and cards</span>
+                                    </div>
+                                    <label class="settings-toggle" for="settingsCompactToggle">
+                                        <input type="checkbox" id="settingsCompactToggle" class="settings-toggle__input" aria-label="Toggle compact mode">
+                                        <span class="settings-toggle__track" aria-hidden="true">
+                                            <span class="settings-toggle__thumb"></span>
+                                        </span>
+                                    </label>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section class="settings-card" aria-labelledby="notificationsHeading">
+                            <div class="settings-card__header">
+                                <div class="settings-card__icon">
+                                    <i class="ph-fill ph-bell"></i>
+                                </div>
+                                <h3 id="notificationsHeading">Notifications</h3>
+                            </div>
+                            <div class="settings-card__body settings-card__body--rows">
+                                <div class="settings-row">
+                                    <div class="settings-row__text">
+                                        <span class="settings-row__title">Enable Due Date Reminders</span>
+                                        <span class="settings-row__desc">Browser alert 1 hour before a task is due (while this tab is open)</span>
+                                    </div>
+                                    <label class="settings-toggle" for="settingsDueRemindersToggle">
+                                        <input type="checkbox" id="settingsDueRemindersToggle" class="settings-toggle__input" aria-label="Enable due date reminders">
+                                        <span class="settings-toggle__track" aria-hidden="true">
+                                            <span class="settings-toggle__thumb"></span>
+                                        </span>
+                                    </label>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section class="settings-card" aria-labelledby="aiHeading">
+                            <div class="settings-card__header">
+                                <div class="settings-card__icon">
+                                    <i class="ph-fill ph-robot"></i>
+                                </div>
+                                <h3 id="aiHeading">AI Assistant Settings</h3>
+                            </div>
+                            <div class="settings-card__body settings-card__body--rows">
+                                <div class="settings-row">
+                                    <div class="settings-row__text">
+                                        <span class="settings-row__title">AI task suggestions</span>
+                                        <span class="settings-row__desc">Allow the assistant to suggest and create tasks</span>
+                                    </div>
+                                    <label class="settings-toggle" for="settingsAiToggle">
+                                        <input type="checkbox" id="settingsAiToggle" class="settings-toggle__input" aria-label="Toggle AI task suggestions" checked>
+                                        <span class="settings-toggle__track" aria-hidden="true">
+                                            <span class="settings-toggle__thumb"></span>
+                                        </span>
+                                    </label>
+                                </div>
+                                <button type="button" id="settingsClearAiBtn" class="settings-btn settings-btn--secondary">
+                                    <i class="ph-bold ph-trash"></i>
+                                    Clear AI history
+                                </button>
+                            </div>
+                        </section>
+
+                        <section class="settings-card" aria-labelledby="dataHeading">
+                            <div class="settings-card__header">
+                                <div class="settings-card__icon">
+                                    <i class="ph-fill ph-shield-check"></i>
+                                </div>
+                                <h3 id="dataHeading">Data &amp; Privacy</h3>
+                            </div>
+                            <div class="settings-card__body settings-card__body--actions">
+                                <button type="button" id="settingsExportBtn" class="settings-btn settings-btn--primary">
+                                    <i class="ph-bold ph-export"></i>
+                                    Export tasks
+                                </button>
+                                <button type="button" id="settingsClearCacheBtn" class="settings-btn settings-btn--secondary">
+                                    <i class="ph-bold ph-database"></i>
+                                    Clear cache
+                                </button>
+                                <p class="settings-hint">Export downloads your tasks as JSON. Clear cache removes stored analytics and task snapshots on this device.</p>
+                            </div>
+                        </section>
+
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+    <div id="authModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="icon-container modal-icon">
+                <i class="ph-fill ph-lock-key"></i>
+            </div>
+            <h2 id="authTitle">Welcome Back</h2>
+            <p class="tagline modal-tagline">Please login to continue.</p>
+            <form id="authForm" class="auth-form">
+                <input type="text" id="authName" placeholder="Full Name" class="styled-select hidden">
+                <input type="email" id="authEmail" placeholder="Email Address" required class="styled-select">
+                <input type="password" id="authPassword" placeholder="Password" required class="styled-select">
+                <button type="submit" id="authSubmitBtn" class="primary-btn">Login</button>
+            </form>
+            <p class="auth-switch">
+                <span id="authSwitchText">Don't have an account?</span>
+                <button type="button" id="authSwitchLink" class="auth-switch-btn">Register here</button>
+            </p>
+        </div>
+    </div>
+
+    <script src="../assets/js/env.config.js"></script>
+    <script src="../assets/js/config.js"></script>
+    <script src="../assets/js/utils.js"></script>
+    <script src="../assets/js/auth.js"></script>
+    <script src="../assets/js/notifications.js"></script>
+    <script src="../assets/js/settings.js"></script>
+</body>
+</html>

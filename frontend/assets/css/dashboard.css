@@ -226,8 +226,16 @@ a.sidebar-link.sidebar-link--nav {
 }
 
 @media (max-width: 640px) {
+    .dashboard-page-header h2 {
+        font-size: 24px;
+    }
+
     .stats-grid {
         grid-template-columns: 1fr;
+    }
+
+    .stat-card {
+        padding: 14px;
     }
 
     .quick-actions-card {
@@ -237,5 +245,76 @@ a.sidebar-link.sidebar-link--nav {
 
     .quick-action-btn {
         justify-content: center;
+        width: 100%;
     }
+
+    .recent-tasks-list {
+        max-height: none;
+    }
+}
+
+/* Dark mode — dashboard only */
+[data-theme="dark"] .stat-card {
+    background: var(--card-bg);
+    border-color: var(--glass-border);
+    box-shadow: var(--shadow-soft);
+}
+
+[data-theme="dark"] .stat-card:hover {
+    background: var(--card-bg-hover);
+    border-color: rgba(139, 124, 246, 0.4);
+    box-shadow: var(--shadow-hover);
+}
+
+[data-theme="dark"] .quick-actions-card {
+    background: var(--card-bg-subtle);
+    border-color: var(--glass-border);
+}
+
+[data-theme="dark"] .quick-action-btn {
+    background: var(--card-bg);
+    border-color: var(--glass-border);
+    box-shadow: var(--shadow-soft);
+}
+
+[data-theme="dark"] .quick-action-btn:hover {
+    background: linear-gradient(135deg, var(--shape-1), var(--shape-3));
+    color: #f8fafc;
+    border-color: transparent;
+    box-shadow: var(--shadow-violet);
+}
+
+[data-theme="dark"] .task-status-pill {
+    background: var(--card-bg-hover);
+    border-color: var(--glass-border);
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .task-status-pill.is-done {
+    background: rgba(16, 185, 129, 0.15);
+    color: #6ee7b7;
+    border-color: rgba(52, 211, 153, 0.35);
+}
+
+[data-theme="dark"] .insights-card {
+    background: var(--card-bg);
+    border-color: var(--glass-border);
+    box-shadow: var(--shadow-soft);
+}
+
+[data-theme="dark"] .insights-card:hover {
+    border-color: rgba(139, 124, 246, 0.4);
+    box-shadow: var(--shadow-hover);
+}
+
+[data-theme="dark"] .empty-state {
+    background: var(--card-bg-subtle);
+    border-color: var(--glass-border);
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .skeleton-card,
+[data-theme="dark"] .skeleton-task {
+    background: var(--card-bg);
+    border-color: var(--glass-border);
 }

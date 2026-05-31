@@ -12,6 +12,63 @@ function setToken(token) {
 
 function clearToken() {
     localStorage.removeItem(CONFIG.STORAGE_KEYS.TOKEN);
+    localStorage.removeItem(CONFIG.STORAGE_KEYS.CHAT_HISTORY);
+    localStorage.removeItem(CONFIG.STORAGE_KEYS.USER_CACHE);
+    localStorage.removeItem(CONFIG.STORAGE_KEYS.ANALYTICS_CACHE);
+    localStorage.removeItem(CONFIG.STORAGE_KEYS.TASKS_CACHE);
+}
+
+function loadUserProfile() {
+    try {
+        const raw = localStorage.getItem(CONFIG.STORAGE_KEYS.USER_CACHE);
+        return raw ? JSON.parse(raw) : null;
+    } catch {
+        return null;
+    }
+}
+
+function saveUserProfile(profile) {
+    if (!profile) {
+        return;
+    }
+    localStorage.setItem(
+        CONFIG.STORAGE_KEYS.USER_CACHE,
+        JSON.stringify(profile)
+    );
+}
+
+function getProfileFromToken() {
+    const token = getToken();
+    if (!token) {
+        return null;
+    }
+
+    try {
+        const payload = JSON.parse(atob(token.split(".")[1]));
+        if (!payload?.email) {
+            return null;
+        }
+        return { email: payload.email };
+    } catch {
+        return null;
+    }
+}
+
+async function clearSession() {
+    try {
+        await fetch(apiUrl(CONFIG.ENDPOINTS.LOGOUT), {
+            method: "POST",
+            credentials: "include",
+            headers: authHeaders()
+        });
+    } catch {
+        // Session may already be invalid; still clear local state.
+    }
+
+    clearToken();
+    notificationsState.items = [];
+    notificationsState.unreadCount = 0;
+    notificationsState.dropdownOpen = false;
 }
 
 function authHeaders() {
@@ -60,12 +117,13 @@ async function apiFetch(endpoint, options = {}) {
     }
     
     const config = {
+        credentials: "include",
         ...options,
         headers
     };
 
     try {
-        const response = await fetch(`${CONFIG.API_BASE}${endpoint}`, config);
+        const response = await fetch(apiUrl(endpoint), config);
         
         // Handle unauthorized universally
         if (response.status === 401) {
@@ -76,7 +134,7 @@ async function apiFetch(endpoint, options = {}) {
         const data = await parseJsonResponse(response);
 
         if (!response.ok) {
-            throw new Error(data.error || data.message || `API Error: ${response.status}`);
+            throw new Error(formatApiError(data, response.status));
         }
 
         return data;
@@ -96,6 +154,52 @@ async function parseJsonResponse(res) {
         return JSON.parse(text);
     } catch {
         throw new Error(`Invalid server response (${res.status})`);
+    }
+}
+
+function formatApiError(data, status) {
+    if (Array.isArray(data.errors) && data.errors.length > 0) {
+        return data.errors.join(" ");
+    }
+    return data.error || data.message || `API Error: ${status}`;
+}
+
+function apiUrl(endpoint) {
+    const base = CONFIG.API_BASE.replace(/\/$/, "");
+    const path = String(endpoint || "").startsWith("/")
+        ? endpoint
+        : `/${endpoint}`;
+    return `${base}${path}`;
+}
+
+async function verifyBackendConnection() {
+    try {
+        const response = await fetch(apiUrl(CONFIG.ENDPOINTS.HEALTH), {
+            method: "GET",
+            credentials: "include",
+        });
+        if (!response.ok) {
+            throw new Error(`Health check failed (${response.status})`);
+        }
+        const data = await parseJsonResponse(response);
+        console.info(
+            `[SmartTodo] API connected: ${CONFIG.API_BASE} (${data.database})`
+        );
+        return data;
+    } catch (err) {
+        console.error(
+            `[SmartTodo] API unreachable at ${CONFIG.API_BASE}:`,
+            err.message
+        );
+        if (!sessionStorage.getItem("smarttodo_api_warned")) {
+            showToast(
+                `Cannot reach API at ${CONFIG.API_BASE}. Is the backend running?`,
+                6000,
+                "error"
+            );
+            sessionStorage.setItem("smarttodo_api_warned", "1");
+        }
+        return null;
     }
 }
 
@@ -130,6 +234,9 @@ function toggleTheme() {
 
 function handleUnauthorized() {
     clearToken();
+    notificationsState.items = [];
+    notificationsState.unreadCount = 0;
+    notificationsState.dropdownOpen = false;
     showToast("Session expired. Please log in again.", 4000, "error");
     if (typeof window.setAppState === "function") {
         window.setAppState(false);
@@ -283,7 +390,7 @@ async function registerNotificationServiceWorker() {
     }
 
     try {
-        notificationsState.swRegistration = await navigator.serviceWorker.register("sw.js");
+        notificationsState.swRegistration = await navigator.serviceWorker.register("/sw.js");
         requestPushPermission();
     } catch (err) {
         console.warn("Notification service worker failed:", err);
@@ -348,24 +455,78 @@ function initSidebar() {
     const sidebarToggleBtn = document.getElementById("sidebarToggleBtn");
     const sidebarCloseBtn = document.getElementById("sidebarCloseBtn");
     const sidebarOverlay = document.getElementById("sidebarOverlay");
+    const sidebarNavLinks = sidebar?.querySelectorAll(
+        ".sidebar-nav a, .sidebar-nav .sidebar-link"
+    );
+
+    const isDrawerMode = () =>
+        window.matchMedia("(max-width: 1100px)").matches;
 
     function openSidebar() {
+        if (!isDrawerMode()) {
+            return;
+        }
         sidebar?.classList.add("active");
         sidebarOverlay?.classList.remove("hidden");
+        sidebarOverlay?.setAttribute("aria-hidden", "false");
+        document.body.classList.add("sidebar-open");
     }
 
     function closeSidebar() {
         sidebar?.classList.remove("active");
         sidebarOverlay?.classList.add("hidden");
+        sidebarOverlay?.setAttribute("aria-hidden", "true");
+        document.body.classList.remove("sidebar-open");
     }
 
-    sidebarToggleBtn?.addEventListener("click", openSidebar);
+    function toggleSidebar() {
+        if (sidebar?.classList.contains("active")) {
+            closeSidebar();
+        } else {
+            openSidebar();
+        }
+    }
+
+    sidebarToggleBtn?.addEventListener("click", (e) => {
+        e.preventDefault();
+        toggleSidebar();
+    });
     sidebarCloseBtn?.addEventListener("click", closeSidebar);
     sidebarOverlay?.addEventListener("click", closeSidebar);
+
+    sidebarNavLinks?.forEach((link) => {
+        link.addEventListener("click", () => {
+            if (isDrawerMode()) {
+                closeSidebar();
+            }
+        });
+    });
+
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && sidebar?.classList.contains("active")) {
+            closeSidebar();
+        }
+    });
+
+    window.addEventListener("resize", () => {
+        if (!isDrawerMode()) {
+            closeSidebar();
+        }
+    });
 }
 
 document.addEventListener("DOMContentLoaded", () => {
     initSidebar();
+
+    if (
+        localStorage.getItem(CONFIG.STORAGE_KEYS.COMPACT_MODE) ===
+        "true"
+    ) {
+        document.documentElement.setAttribute(
+            "data-compact",
+            "true"
+        );
+    }
 
     const currentTheme = getSavedTheme();
     applyTheme(currentTheme);
@@ -373,11 +534,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const themeToggleBtn = document.getElementById("themeToggleBtn");
     themeToggleBtn?.addEventListener("click", toggleTheme);
 
+    verifyBackendConnection();
+
     if (getToken()) {
         fetchAndRenderSidebar();
         initNotifications();
     } else {
         hideSidebarGamification();
+        resetSidebarUser();
     }
 });
 
@@ -440,32 +604,60 @@ function renderPriorityBadge(priority) {
 async function fetchAndRenderSidebar() {
     if (!getToken()) {
         hideSidebarGamification();
+        resetSidebarUser();
         return;
     }
     // If we are on dashboard.html, let dashboard.js handle rendering to prevent double API requests
     if (window.location.pathname.includes("dashboard.html")) {
         return;
     }
+
+    const cached = loadUserProfile();
+    const tokenProfile = getProfileFromToken();
+    if (cached?.name) {
+        updateSidebarUserName(cached.name);
+    } else if (tokenProfile?.email) {
+        updateSidebarUserName(tokenProfile.email.split("@")[0]);
+    }
+
     try {
         const data = await apiFetch(CONFIG.ENDPOINTS.DASHBOARD);
+        const profile = {
+            name: data.userName || cached?.name || "User",
+            email: data.email || cached?.email || "",
+        };
+        saveUserProfile(profile);
+        updateSidebarUserName(profile.name);
+
         if (data && data.gamification) {
-            updateSidebarGamification(data.gamification, data.userName);
+            updateSidebarGamification(data.gamification, profile.name);
         }
     } catch (err) {
         console.error("Failed to load sidebar gamification:", err);
+        if (cached?.name) {
+            updateSidebarUserName(cached.name);
+        }
+    }
+}
+
+function updateSidebarUserName(userName) {
+    const sidebarUserName =
+        document.getElementById("sidebarUserName") ||
+        document.querySelector(".sidebar-user-card .user-name") ||
+        document.querySelector(".user-info .user-name");
+
+    if (sidebarUserName && userName) {
+        sidebarUserName.textContent = userName;
     }
 }
 
 function updateSidebarGamification(gamification, userName) {
     const sidebarXpContainer = document.getElementById("sidebarXpContainer");
-    const sidebarUserName = document.getElementById("sidebarUserName") || document.querySelector(".sidebar-user-card .user-name") || document.querySelector(".user-info .user-name");
     const sidebarLevelTag = document.getElementById("sidebarLevelTag");
     const sidebarXpBar = document.getElementById("sidebarXpBar");
     const sidebarXpText = document.getElementById("sidebarXpText");
 
-    if (sidebarUserName && userName) {
-        sidebarUserName.textContent = userName;
-    }
+    updateSidebarUserName(userName);
 
     if (!gamification || !gamification.levelInfo) {
         hideSidebarGamification();
@@ -496,14 +688,21 @@ function updateSidebarGamification(gamification, userName) {
 function hideSidebarGamification() {
     const sidebarXpContainer = document.getElementById("sidebarXpContainer");
     const sidebarLevelTag = document.getElementById("sidebarLevelTag");
-    const sidebarUserName = document.getElementById("sidebarUserName") || document.querySelector(".sidebar-user-card .user-name") || document.querySelector(".user-info .user-name");
-    
+
     if (sidebarXpContainer) {
         sidebarXpContainer.classList.add("hidden");
     }
     if (sidebarLevelTag) {
         sidebarLevelTag.classList.add("hidden");
     }
+}
+
+function resetSidebarUser() {
+    const sidebarUserName =
+        document.getElementById("sidebarUserName") ||
+        document.querySelector(".sidebar-user-card .user-name") ||
+        document.querySelector(".user-info .user-name");
+
     if (sidebarUserName) {
         sidebarUserName.textContent = "Guest";
     }
@@ -519,6 +718,7 @@ window.setAppState = function(loggedIn) {
         fetchAndRenderSidebar();
     } else {
         hideSidebarGamification();
+        resetSidebarUser();
     }
 };
 

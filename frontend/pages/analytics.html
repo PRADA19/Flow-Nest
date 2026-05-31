@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard — Flow Nest</title>
+    <title>Analytics — Flow Nest</title>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/@phosphor-icons/web"></script>
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="dashboard.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="../assets/css/analytics.css">
 </head>
 <body>
 
@@ -36,7 +37,7 @@
             </div>
 
             <nav class="sidebar-nav" aria-label="App sections">
-                <a href="dashboard.html" class="sidebar-link sidebar-link--nav active">
+                <a href="dashboard.html" class="sidebar-link sidebar-link--nav">
                     <i class="ph-fill ph-house"></i>
                     <span>Dashboard</span>
                 </a>
@@ -44,15 +45,19 @@
                     <i class="ph-fill ph-check-circle"></i>
                     <span>Tasks</span>
                 </a>
-                <a href="index.html" class="sidebar-link sidebar-link--nav">
+                <a href="index.html?view=calendar" class="sidebar-link sidebar-link--nav">
                     <i class="ph-fill ph-calendar"></i>
                     <span>Calendar</span>
                 </a>
-                <a href="analytics.html" class="sidebar-link sidebar-link--nav">
+                <a href="analytics.html" class="sidebar-link sidebar-link--nav active">
                     <i class="ph-fill ph-chart-line-up"></i>
                     <span>Analytics</span>
                 </a>
-                <a href="index.html" class="sidebar-link sidebar-link--nav">
+                <a href="assistant.html" class="sidebar-link sidebar-link--nav">
+                    <i class="ph-fill ph-robot"></i>
+                    <span>AI Assistant</span>
+                </a>
+                <a href="settings.html" class="sidebar-link sidebar-link--nav">
                     <i class="ph-fill ph-gear"></i>
                     <span>Settings</span>
                 </a>
@@ -65,14 +70,7 @@
                     </div>
                     <div class="user-info">
                         <span class="user-name" id="sidebarUserName">Guest</span>
-                        <span class="sidebar-level-tag hidden" id="sidebarLevelTag">Lvl 1 Novice</span>
                     </div>
-                </div>
-                <div class="sidebar-xp-container hidden" id="sidebarXpContainer">
-                    <div class="sidebar-xp-bar-wrapper">
-                        <div class="sidebar-xp-bar" id="sidebarXpBar" style="width: 0%;"></div>
-                    </div>
-                    <span class="sidebar-xp-text" id="sidebarXpText">0 / 100 XP</span>
                 </div>
             </div>
         </aside>
@@ -83,11 +81,11 @@
             <header class="app-header app-header--toolbar">
                 <div class="header-content">
                     <div class="icon-container">
-                        <i class="ph-fill ph-house"></i>
+                        <i class="ph-fill ph-chart-line-up"></i>
                     </div>
                     <div class="header-text">
                         <h1>Flow Nest</h1>
-                        <p class="tagline">Plan today. Achieve tomorrow.</p>
+                        <p class="tagline">Track your productivity insights</p>
                     </div>
                 </div>
                 <div class="header-actions">
@@ -109,49 +107,81 @@
             </header>
 
             <main class="main-content" id="mainContent">
-                <div class="container">
+                <div class="container analytics-page">
 
-                    <header class="dashboard-page-header">
-                        <h2>Dashboard</h2>
-                        <p class="dashboard-subtitle" id="dashboardWelcome">Welcome back 👋</p>
+                    <header class="analytics-page-header">
+                        <h2>Analytics</h2>
+                        <p class="analytics-subtitle">
+                            Last updated: <span id="lastUpdatedTime">--</span>
+                        </p>
                     </header>
 
-                    <section class="dashboard-section" aria-labelledby="statsHeading">
-                        <h3 class="dashboard-section-title" id="statsHeading">
+                    <section class="dashboard-section" aria-labelledby="overviewHeading">
+                        <h3 class="dashboard-section-title" id="overviewHeading">
                             <i class="ph-fill ph-chart-bar"></i> Overview
                         </h3>
-                        <div class="stats-grid" id="statsGrid" aria-live="polite"></div>
-                    </section>
-
-                    <section class="dashboard-section" aria-labelledby="actionsHeading">
-                        <h3 class="dashboard-section-title" id="actionsHeading">
-                            <i class="ph-fill ph-lightning"></i> Quick Actions
-                        </h3>
-                        <div class="quick-actions-card">
-                            <a href="index.html" class="quick-action-btn" id="addTaskAction">
-                                <i class="ph-bold ph-plus"></i> Add Task
-                            </a>
-                            <a href="index.html" class="quick-action-btn">
-                                <i class="ph-bold ph-list"></i> View Tasks
-                            </a>
-                            <a href="index.html" class="quick-action-btn" id="viewCalendarAction">
-                                <i class="ph-bold ph-calendar"></i> View Calendar
-                            </a>
+                        <div class="analytics-grid" id="analyticsGrid">
+                            <div class="analytics-card">
+                                <div class="card-icon"><i class="ph-fill ph-target"></i></div>
+                                <div class="card-info">
+                                    <h3>Completion Rate</h3>
+                                    <p id="statCompletionRate" class="stat-value">--%</p>
+                                </div>
+                            </div>
+                            <div class="analytics-card">
+                                <div class="card-icon"><i class="ph-fill ph-calendar-check"></i></div>
+                                <div class="card-info">
+                                    <h3>Today</h3>
+                                    <p id="statToday" class="stat-value">--</p>
+                                </div>
+                            </div>
+                            <div class="analytics-card">
+                                <div class="card-icon"><i class="ph-fill ph-calendar-blank"></i></div>
+                                <div class="card-info">
+                                    <h3>This Week</h3>
+                                    <p id="statThisWeek" class="stat-value">--</p>
+                                </div>
+                            </div>
+                            <div class="analytics-card">
+                                <div class="card-icon"><i class="ph-fill ph-clock"></i></div>
+                                <div class="card-info">
+                                    <h3>Productive Time</h3>
+                                    <p id="statProductiveTime" class="stat-value text-small">--</p>
+                                </div>
+                            </div>
                         </div>
                     </section>
 
-                    <section class="dashboard-section" aria-labelledby="recentHeading">
-                        <h3 class="dashboard-section-title" id="recentHeading">
-                            <i class="ph-fill ph-clock-counter-clockwise"></i> Recent Tasks
+                    <section class="dashboard-section" aria-labelledby="chartsHeading">
+                        <h3 class="dashboard-section-title" id="chartsHeading">
+                            <i class="ph-fill ph-trend-up"></i> Activity Trends
                         </h3>
-                        <div class="recent-tasks-list" id="recentTasksList" aria-live="polite"></div>
-                    </section>
-
-                    <section class="dashboard-section hidden" id="insightsSection" aria-labelledby="insightsHeading">
-                        <h3 class="dashboard-section-title" id="insightsHeading">
-                            <i class="ph-fill ph-sparkle"></i> Smart Insights
-                        </h3>
-                        <div class="insights-card" id="insightsCard"></div>
+                        <div class="charts-grid">
+                            <div class="chart-wrapper">
+                                <h4 class="chart-title">Productivity Trend</h4>
+                                <div class="chart-container">
+                                    <canvas id="weeklyTrendChart"></canvas>
+                                </div>
+                            </div>
+                            <div class="chart-wrapper">
+                                <h4 class="chart-title">Task Categories</h4>
+                                <div class="chart-container">
+                                    <canvas id="categoryChart"></canvas>
+                                </div>
+                            </div>
+                            <div class="chart-wrapper">
+                                <h4 class="chart-title">Completion Status</h4>
+                                <div class="chart-container">
+                                    <canvas id="statusChart"></canvas>
+                                </div>
+                            </div>
+                            <div class="chart-wrapper">
+                                <h4 class="chart-title">Peak Hours</h4>
+                                <div class="chart-container">
+                                    <canvas id="productiveHoursChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
                     </section>
 
                 </div>
@@ -181,9 +211,11 @@
         </div>
     </div>
 
-    <script src="config.js"></script>
-    <script src="utils.js"></script>
-    <script src="auth.js"></script>
-    <script src="dashboard.js"></script>
+    <script src="../assets/js/env.config.js"></script>
+    <script src="../assets/js/config.js"></script>
+    <script src="../assets/js/utils.js"></script>
+    <script src="../assets/js/auth.js"></script>
+    <script src="../assets/js/notifications.js"></script>
+    <script src="../assets/js/analytics.js"></script>
 </body>
 </html>

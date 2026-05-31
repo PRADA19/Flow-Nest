@@ -109,21 +109,34 @@ function initAuth() {
         
         try {
             // Un-authenticated request wrapper bypass for login/register
-            const response = await fetch(`${CONFIG.API_BASE}${endpoint}`, {
+            const response = await fetch(apiUrl(endpoint), {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
+                credentials: "include",
                 body: JSON.stringify(payload)
             });
             
             const data = await parseJsonResponse(response);
             
             if (!response.ok) {
-                throw new Error(data.error || data.message || "Auth failed");
+                const validationMsg = Array.isArray(data.errors)
+                    ? data.errors.join(" ")
+                    : null;
+                throw new Error(
+                    data.error || data.message || validationMsg || "Auth failed"
+                );
             }
 
             if (authMode === "login") {
                 if (!data.token) throw new Error("No token received");
                 setToken(data.token);
+
+                if (data.user) {
+                    saveUserProfile({
+                        name: data.user.name,
+                        email: data.user.email,
+                    });
+                }
                 
                 // Clear forms
                 document.getElementById("authEmail").value = "";
@@ -150,8 +163,8 @@ function initAuth() {
         }
     });
 
-    logoutBtn?.addEventListener("click", () => {
-        clearToken();
+    logoutBtn?.addEventListener("click", async () => {
+        await clearSession();
         setAppState(false);
     });
 

@@ -120,6 +120,14 @@ const ChartRenderer = {
         Object.keys(this.instances).forEach(id => this.destroyChart(id));
     },
 
+    resizeAll() {
+        Object.values(this.instances).forEach((chart) => {
+            if (chart) {
+                chart.resize();
+            }
+        });
+    },
+
     getCommonOptions() {
         return {
             responsive: true,
@@ -464,3 +472,11 @@ window.onAuthStateChanged = (loggedIn) => {
         if (UI.elements.productiveTime) UI.elements.productiveTime.textContent = "--";
     }
 };
+
+let analyticsResizeTimer;
+window.addEventListener("resize", () => {
+    clearTimeout(analyticsResizeTimer);
+    analyticsResizeTimer = setTimeout(() => {
+        ChartRenderer.resizeAll();
+    }, 150);
+});

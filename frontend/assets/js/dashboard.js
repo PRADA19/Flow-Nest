@@ -208,6 +208,20 @@ function renderInsights(insights) {
     insightsCard.innerHTML = parts.join("");
 }
 
+async function cacheTasksForReminders() {
+    if (!getToken()) {
+        return;
+    }
+    try {
+        const tasks = await apiFetch(CONFIG.ENDPOINTS.TASKS);
+        if (typeof window.saveTasksCache === "function") {
+            saveTasksCache(tasks);
+        }
+    } catch (err) {
+        console.warn("Could not refresh tasks cache for reminders:", err);
+    }
+}
+
 async function fetchDashboardData() {
     if (dashboardFetchStarted) return;
     
@@ -218,11 +232,18 @@ async function fetchDashboardData() {
     try {
         const data = await apiFetch(CONFIG.ENDPOINTS.DASHBOARD);
         const normalized = normalizeDashboardPayload(data);
+
+        saveUserProfile({
+            name: normalized.userName || data.userName || "User",
+            email: data.email || loadUserProfile()?.email || "",
+        });
         
         renderWelcome(normalized.userName);
         renderStats(normalized.stats);
         renderRecentTasks(normalized.recentTasks);
         renderInsights(normalized.insights);
+
+        cacheTasksForReminders();
     } catch (err) {
         console.error("Dashboard fetch error:", err);
         const msg = err.message || "Could not load dashboard";
@@ -251,6 +272,12 @@ async function fetchDashboardData() {
 window.onAuthStateChanged = (loggedIn) => {
     if (loggedIn) {
         fetchDashboardData();
+        if (
+            window.DueReminders?.isEnabled?.() &&
+            window.DueReminders?.checkNow
+        ) {
+            DueReminders.checkNow();
+        }
     } else {
         dashboardFetchStarted = false;
         renderStatsSkeleton();

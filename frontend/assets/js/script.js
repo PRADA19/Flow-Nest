@@ -79,6 +79,9 @@ async function fetchTasks() {
     try {
         const tasks = await apiFetch(url);
         loadedTasks = tasks;
+        if (typeof window.saveTasksCache === "function") {
+            saveTasksCache(tasks);
+        }
         renderTasks(tasks);
         updateCalendar();
         
@@ -142,11 +145,24 @@ async function addTask() {
         showToast("Please enter a task title.");
         return;
     }
+    if (title.length < 3) {
+        showToast("Task title must be at least 3 characters.", 4000, "error");
+        return;
+    }
+    if (!getToken()) {
+        showToast("Please log in to add tasks.", 4000, "error");
+        return;
+    }
 
     const dueDate = dueDateInput.value || undefined;
     const priority = prioritySelect.value;
     const tagValue = tagSelect.value;
     const tags = tagValue ? [tagValue] : [];
+
+    const payload = { title, priority, tags };
+    if (dueDate) {
+        payload.dueDate = dueDate;
+    }
 
     const originalBtnContent = addBtn.innerHTML;
     addBtn.disabled = true;
@@ -155,7 +171,7 @@ async function addTask() {
     try {
         await apiFetch(CONFIG.ENDPOINTS.TASKS, {
             method: "POST",
-            body: JSON.stringify({ title, dueDate, priority, tags })
+            body: JSON.stringify(payload)
         });
         
         taskInput.value = "";
@@ -297,24 +313,84 @@ viewListBtn?.addEventListener("click", () => setView("list"));
 viewCalendarBtn?.addEventListener("click", () => setView("calendar"));
 
 function setView(view) {
+    if (!listViewContainer || !calendarViewContainer) {
+        return;
+    }
+
     currentView = view;
-    if (view === "list") {
-        viewListBtn.classList.add("active");
-        viewCalendarBtn.classList.remove("active");
+    const isCalendar = view === "calendar";
+    document.body.classList.toggle("tasks-view-calendar", isCalendar);
+
+    if (!isCalendar) {
+        viewListBtn?.classList.add("active");
+        viewCalendarBtn?.classList.remove("active");
         listViewContainer.classList.remove("hidden");
         calendarViewContainer.classList.add("hidden");
-    } else {
-        viewListBtn.classList.remove("active");
-        viewCalendarBtn.classList.add("active");
-        listViewContainer.classList.add("hidden");
-        calendarViewContainer.classList.remove("hidden");
-        
-        if (!calendar) {
-            initCalendar();
-        } else {
-            calendar.render();
-        }
+        return;
     }
+
+    viewListBtn?.classList.remove("active");
+    viewCalendarBtn?.classList.add("active");
+    listViewContainer.classList.add("hidden");
+    calendarViewContainer.classList.remove("hidden");
+
+    ensureCalendarReady();
+}
+
+function ensureCalendarReady() {
+    if (!calendarViewContainer || calendarViewContainer.classList.contains("hidden")) {
+        return;
+    }
+
+    if (!calendar) {
+        initCalendar();
+    } else {
+        updateCalendar();
+    }
+
+    requestAnimationFrame(() => {
+        if (calendar) {
+            calendar.updateSize();
+        }
+    });
+
+    setTimeout(() => {
+        if (calendar) {
+            calendar.updateSize();
+        }
+    }, 100);
+}
+
+function getTaskEventColors(task) {
+    if (task.completed) {
+        return {
+            backgroundColor: "var(--success-color)",
+            borderColor: "var(--success-hover)",
+            textColor: "var(--text-primary)",
+        };
+    }
+
+    const priority = (task.priority || "medium").toLowerCase();
+    if (priority === "high") {
+        return {
+            backgroundColor: "var(--danger-hover)",
+            borderColor: "var(--danger-color)",
+            textColor: "#ffffff",
+        };
+    }
+    if (priority === "low") {
+        return {
+            backgroundColor: "var(--success-color)",
+            borderColor: "var(--success-hover)",
+            textColor: "var(--text-primary)",
+        };
+    }
+
+    return {
+        backgroundColor: "var(--accent-color)",
+        borderColor: "var(--shape-1)",
+        textColor: "var(--text-primary)",
+    };
 }
 
 function initCalendar() {
@@ -323,46 +399,88 @@ function initCalendar() {
         console.warn("Calendar element or FullCalendar library not found");
         return;
     }
-    
+
     calendar = new window.FullCalendar.Calendar(calendarEl, {
-        initialView: 'dayGridMonth',
+        initialView: "dayGridMonth",
+        height: "100%",
+        expandRows: true,
         headerToolbar: {
-            left: 'prev,next today',
-            center: 'title',
-            right: 'dayGridMonth,timeGridWeek,timeGridDay'
+            left: "prev,next today",
+            center: "title",
+            right: "dayGridMonth,timeGridWeek,timeGridDay",
         },
-        events: getCalendarEvents()
+        events: getCalendarEvents(),
+        eventDisplay: "block",
+        dayMaxEvents: 3,
+        moreLinkClick: "popover",
     });
+
     calendar.render();
+    calendar.updateSize();
 }
 
 function getCalendarEvents() {
     return loadedTasks
-        .filter(t => t.dueDate)
-        .map(t => {
+        .filter((t) => t.dueDate)
+        .map((t) => {
+            const colors = getTaskEventColors(t);
             return {
-                id: t._id,
+                id: String(t._id),
                 title: t.title,
                 start: t.dueDate,
                 allDay: true,
-                backgroundColor: t.completed ? "var(--success)" : "var(--primary)",
-                borderColor: t.completed ? "var(--success)" : "var(--primary)",
-                classNames: t.completed ? ['task-completed-event'] : []
+                backgroundColor: colors.backgroundColor,
+                borderColor: colors.borderColor,
+                textColor: colors.textColor,
+                classNames: t.completed ? ["task-completed-event"] : [],
             };
         });
 }
 
 function updateCalendar() {
-    if (!calendar) return;
-    
-    // Remove all existing events
-    calendar.getEvents().forEach(event => event.remove());
-    
-    // Add new events
-    getCalendarEvents().forEach(eventData => {
+    if (!calendar) {
+        return;
+    }
+
+    calendar.removeAllEvents();
+    getCalendarEvents().forEach((eventData) => {
         calendar.addEvent(eventData);
     });
+    calendar.updateSize();
 }
+
+function applyInitialViewFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("view") === "calendar") {
+        setView("calendar");
+    }
+}
+
+function syncCalendarOnThemeChange() {
+    const themeBtn = document.getElementById("themeToggleBtn");
+    themeBtn?.addEventListener("click", () => {
+        setTimeout(() => {
+            if (currentView === "calendar" && calendar) {
+                calendar.updateSize();
+            }
+        }, 50);
+    });
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    applyInitialViewFromUrl();
+    syncCalendarOnThemeChange();
+});
+
+let calendarResizeTimer;
+window.addEventListener("resize", () => {
+    clearTimeout(calendarResizeTimer);
+    calendarResizeTimer = setTimeout(() => {
+        if (currentView === "calendar" && calendar) {
+            calendar.updateSize();
+        }
+    }, 150);
+});
 
 
 

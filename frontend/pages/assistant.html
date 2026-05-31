@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Assistant — Flow Nest</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="../assets/css/assistant.css">
+</head>
+<body>
+
+    <!-- Animated Background Shapes -->
+    <div class="bg-shape shape-1" aria-hidden="true"></div>
+    <div class="bg-shape shape-2" aria-hidden="true"></div>
+    <div class="bg-shape shape-3" aria-hidden="true"></div>
+
+    <div class="app-layout">
+
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar" id="sidebar" aria-label="Main navigation">
+            <div class="sidebar-top">
+                <div class="sidebar-logo">
+                    <div class="sidebar-logo-icon">
+                        <i class="ph-fill ph-check-square-offset"></i>
+                    </div>
+                    <div class="sidebar-logo-text">
+                        <h2>Flow Nest</h2>
+                        <p>Productivity App</p>
+                    </div>
+                </div>
+                <button type="button" class="sidebar-close-btn" id="sidebarCloseBtn" aria-label="Close sidebar">
+                    <i class="ph-bold ph-x"></i>
+                </button>
+            </div>
+
+            <nav class="sidebar-nav" aria-label="App sections">
+                <a href="dashboard.html" class="sidebar-link sidebar-link--nav">
+                    <i class="ph-fill ph-house"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="index.html" class="sidebar-link sidebar-link--nav">
+                    <i class="ph-fill ph-check-circle"></i>
+                    <span>Tasks</span>
+                </a>
+                <a href="index.html?view=calendar" class="sidebar-link sidebar-link--nav">
+                    <i class="ph-fill ph-calendar"></i>
+                    <span>Calendar</span>
+                </a>
+                <a href="analytics.html" class="sidebar-link sidebar-link--nav">
+                    <i class="ph-fill ph-chart-line-up"></i>
+                    <span>Analytics</span>
+                </a>
+                <a href="assistant.html" class="sidebar-link sidebar-link--nav active">
+                    <i class="ph-fill ph-robot"></i>
+                    <span>AI Assistant</span>
+                </a>
+                <a href="settings.html" class="sidebar-link sidebar-link--nav">
+                    <i class="ph-fill ph-gear"></i>
+                    <span>Settings</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-bottom">
+                <div class="sidebar-user-card">
+                    <div class="user-avatar">
+                        <i class="ph-fill ph-user"></i>
+                    </div>
+                    <div class="user-info">
+                        <span class="user-name" id="sidebarUserName">Guest</span>
+                        <span class="sidebar-level-tag hidden" id="sidebarLevelTag">Lvl 1 Novice</span>
+                    </div>
+                </div>
+                <div class="sidebar-xp-container hidden" id="sidebarXpContainer">
+                    <div class="sidebar-xp-bar-wrapper">
+                        <div class="sidebar-xp-bar" id="sidebarXpBar" style="width: 0%;"></div>
+                    </div>
+                    <span class="sidebar-xp-text" id="sidebarXpText">0 / 100 XP</span>
+                </div>
+            </div>
+        </aside>
+
+        <div class="sidebar-overlay hidden" id="sidebarOverlay" aria-hidden="true"></div>
+
+        <!-- Main Workspace Shell -->
+        <div class="app-main">
+            <header class="app-header app-header--toolbar">
+                <div class="header-content">
+                    <div class="icon-container">
+                        <i class="ph-fill ph-robot"></i>
+                    </div>
+                    <div class="header-text">
+                        <h1>Flow Nest</h1>
+                        <p class="tagline">Plan today. Achieve tomorrow.</p>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <button type="button" id="sidebarToggleBtn" class="action-btn header-icon-btn" aria-label="Open sidebar">
+                        <i class="ph-bold ph-list"></i>
+                    </button>
+                    <button type="button" id="notificationBtn" class="action-btn header-icon-btn" aria-label="Open notifications" onclick="toggleNotificationDropdown()">
+                        <i class="ph-bold ph-bell"></i>
+                        <span class="notification-badge hidden" id="notificationBadge">0</span>
+                    </button>
+                    <button type="button" id="logoutBtn" class="action-btn header-icon-btn hidden" aria-label="Logout">
+                        <i class="ph-bold ph-sign-out"></i>
+                    </button>
+                    <button type="button" id="themeToggleBtn" class="action-btn header-icon-btn" aria-label="Toggle dark mode">
+                        <i class="ph-bold ph-moon"></i>
+                    </button>
+                </div>
+                <div id="notificationDropdown" class="notifications-dropdown hidden" aria-live="polite" aria-label="Notifications panel"></div>
+            </header>
+
+            <main class="main-content" id="mainContent">
+                <div class="container assistant-container">
+
+                    <!-- AI Header -->
+                    <div class="assistant-page-header">
+                        <div class="header-left">
+                            <h2>AI Assistant</h2>
+                            <p class="assistant-subtitle">Your intelligent productivity companion</p>
+                        </div>
+                        <div class="header-right">
+                            <span class="ai-status-badge"><span class="pulse-dot"></span> AI Online</span>
+                        </div>
+                    </div>
+
+                    <!-- Split Panel Structure -->
+                    <div class="assistant-split-layout">
+                        
+                        <!-- Left Panel: Chatbot UI (70%) -->
+                        <section class="assistant-chat-panel" aria-labelledby="chatSectionHeading">
+                            <h3 id="chatSectionHeading" class="hidden">Chat Interface</h3>
+                            
+                            <div class="chat-viewport">
+                                <div class="chat-messages-wrapper" id="chatMessagesWrapper">
+                                    
+                                    <!-- Welcome Card -->
+                                    <div class="welcome-card" id="chatWelcomeCard">
+                                        <div class="welcome-icon-wrapper">
+                                            <i class="ph-fill ph-sparkle"></i>
+                                        </div>
+                                        <h3>Hi 👋 I’m SmartTodo AI</h3>
+                                        <p class="welcome-subtitle">Your personalized productivity coach. I can help you:</p>
+                                        <ul class="welcome-features-list">
+                                            <li><i class="ph ph-check-circle"></i> Schedule tasks naturally</li>
+                                            <li><i class="ph ph-calendar-blank"></i> Plan your daily schedule</li>
+                                            <li><i class="ph ph-lightning"></i> Suggest optimal priorities</li>
+                                            <li><i class="ph ph-chart-bar"></i> Analyze your productivity</li>
+                                            <li><i class="ph ph-book-open"></i> Create custom study schedules</li>
+                                            <li><i class="ph ph-hourglass-high"></i> Optimize weekly workloads</li>
+                                        </ul>
+                                    </div>
+                                    
+                                    <!-- Dynamic Messages Rendered Here -->
+                                    <div class="messages-container" id="messagesContainer"></div>
+
+                                    <!-- Typing Indicator -->
+                                    <div class="typing-indicator-container hidden" id="typingIndicator">
+                                        <div class="typing-bubble">
+                                            <span class="dot"></span>
+                                            <span class="dot"></span>
+                                            <span class="dot"></span>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+
+                            <!-- Chat Input -->
+                            <div class="chat-input-wrapper">
+                                <input type="text" id="chatInputField" placeholder="Ask me to schedule, analyze, plan, prioritize, or organize your tasks..." autocomplete="off">
+                                <button type="button" id="chatSendBtn" aria-label="Send message">
+                                    <i class="ph-bold ph-paper-plane-tilt"></i>
+                                </button>
+                            </div>
+                        </section>
+
+                        <!-- Right Panel: Quick Actions Cards (30%) -->
+                        <aside class="assistant-actions-panel" aria-labelledby="actionsSectionHeading">
+                            <h3 id="actionsSectionHeading" class="dashboard-section-title">
+                                <i class="ph-fill ph-lightning"></i> Quick Actions
+                            </h3>
+                            
+                            <div class="quick-ai-actions-card">
+                                <button type="button" class="quick-action-btn ai-action-card" data-prompt="Schedule React project tomorrow 4 PM">
+                                    <i class="ph-bold ph-plus"></i> Add Task
+                                </button>
+                                <button type="button" class="quick-action-btn ai-action-card" data-prompt="Schedule my DBMS assignment tomorrow at 5 PM">
+                                    <i class="ph-bold ph-calendar"></i> Schedule Task
+                                </button>
+                                <button type="button" class="quick-action-btn ai-action-card" data-prompt="Show pending tasks">
+                                    <i class="ph-bold ph-list-checks"></i> Show Pending Tasks
+                                </button>
+                                <button type="button" class="quick-action-btn ai-action-card" data-prompt="Analyze my productivity">
+                                    <i class="ph-bold ph-chart-bar"></i> Analyze Productivity
+                                </button>
+                                <button type="button" class="quick-action-btn ai-action-card" data-prompt="What should I prioritize?">
+                                    <i class="ph-bold ph-lightning"></i> Suggest Priorities
+                                </button>
+                                <button type="button" class="quick-action-btn ai-action-card" data-prompt="Plan my day">
+                                    <i class="ph-bold ph-brain"></i> Plan My Day
+                                </button>
+                                <button type="button" class="quick-action-btn ai-action-card" data-prompt="Create Python study schedule">
+                                    <i class="ph-bold ph-book-open"></i> Study Planner
+                                </button>
+                                <button type="button" class="quick-action-btn ai-action-card" data-prompt="I feel tired today, reduce my workload">
+                                    <i class="ph-bold ph-arrows-clockwise"></i> Reschedule Tasks
+                                </button>
+                                <button type="button" class="quick-action-btn ai-action-card" data-prompt="Show reminders">
+                                    <i class="ph-bold ph-bell"></i> Smart Reminders
+                                </button>
+                                <button type="button" class="quick-action-btn ai-action-card danger-clear-btn" id="clearChatBtn">
+                                    <i class="ph-bold ph-trash"></i> Clear Chat
+                                </button>
+                            </div>
+                        </aside>
+
+                    </div>
+
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+    <div id="authModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="icon-container modal-icon">
+                <i class="ph-fill ph-lock-key"></i>
+            </div>
+            <h2 id="authTitle">Welcome Back</h2>
+            <p class="tagline modal-tagline">Please login to continue.</p>
+
+            <form id="authForm" class="auth-form">
+                <input type="text" id="authName" placeholder="Full Name" class="styled-select hidden">
+                <input type="email" id="authEmail" placeholder="Email Address" required class="styled-select">
+                <input type="password" id="authPassword" placeholder="Password" required class="styled-select">
+
+                <button type="submit" id="authSubmitBtn" class="primary-btn">Login</button>
+            </form>
+
+            <p class="auth-switch">
+                <span id="authSwitchText">Don't have an account?</span>
+                <button type="button" id="authSwitchLink" class="auth-switch-btn">Register here</button>
+            </p>
+        </div>
+    </div>
+
+    <script src="../assets/js/env.config.js"></script>
+    <script src="../assets/js/config.js"></script>
+    <script src="../assets/js/utils.js"></script>
+    <script src="../assets/js/auth.js"></script>
+    <script src="../assets/js/assistant.js"></script>
+</body>
+</html>
