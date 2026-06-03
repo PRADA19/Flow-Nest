@@ -35,4 +35,10 @@ const taskSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Add indexes for performance
+taskSchema.index({ userId: 1 });
+taskSchema.index({ userId: 1, completed: 1 });
+taskSchema.index({ dueDate: 1 });
+taskSchema.index({ completed: 1 });
+
 module.exports = mongoose.model("Task", taskSchema);

@@ -23,8 +23,8 @@ function normalizeDashboardPayload(data) {
     );
     const pending = Number(
         statsSource.pendingTasks ??
-            statsSource.pending ??
-            Math.max(0, total - completed)
+        statsSource.pending ??
+        Math.max(0, total - completed)
     );
     let completionRate = statsSource.completionRate;
     if (completionRate === undefined || completionRate === null) {
@@ -224,7 +224,7 @@ async function cacheTasksForReminders() {
 
 async function fetchDashboardData() {
     if (dashboardFetchStarted) return;
-    
+
     dashboardFetchStarted = true;
     renderStatsSkeleton();
     renderRecentTasksSkeleton();
@@ -237,7 +237,7 @@ async function fetchDashboardData() {
             name: normalized.userName || data.userName || "User",
             email: data.email || loadUserProfile()?.email || "",
         });
-        
+
         renderWelcome(normalized.userName);
         renderStats(normalized.stats);
         renderRecentTasks(normalized.recentTasks);
@@ -259,7 +259,7 @@ async function fetchDashboardData() {
         );
         renderRecentTasks([], "Unable to load recent tasks");
         insightsSection?.classList.add("hidden");
-        
+
         if (msg !== "Unauthorized") {
             showToast(msg, 4000, "error");
         }

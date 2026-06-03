@@ -109,7 +109,7 @@ function showToast(message, duration = 2500, type = "info") {
 }
 
 // Wrapper to handle API requests and standard error logic universally
-async function apiFetch(endpoint, options = {}) {
+async function apiFetch(endpoint, options = {}, retries = 3, backoff = 1000) {
     // Default headers
     const headers = authHeaders();
     if (options.headers) {
@@ -122,28 +122,35 @@ async function apiFetch(endpoint, options = {}) {
         headers
     };
 
-    try {
-        const response = await fetch(apiUrl(endpoint), config);
-        
-        // Handle unauthorized universally
-        if (response.status === 401) {
-            handleUnauthorized();
-            throw new Error("Unauthorized");
-        }
+    for (let i = 1; i <= retries; i++) {
+        try {
+            const response = await fetch(apiUrl(endpoint), config);
+            
+            // Handle unauthorized universally
+            if (response.status === 401) {
+                handleUnauthorized();
+                throw new Error("Unauthorized");
+            }
 
-        const data = await parseJsonResponse(response);
+            const data = await parseJsonResponse(response);
 
-        if (!response.ok) {
-            throw new Error(formatApiError(data, response.status));
-        }
+            if (!response.ok) {
+                throw new Error(formatApiError(data, response.status));
+            }
 
-        return data;
-    } catch (error) {
-        // Distinguish network errors (e.g. server down)
-        if (error.message === "Failed to fetch") {
-            throw new Error("Cannot reach the server. Make sure the backend is running.");
+            return data;
+        } catch (error) {
+            // If it's unauthorized or if it's the last retry, throw the error
+            if (error.message === "Unauthorized" || i === retries) {
+                if (error.message === "Failed to fetch") {
+                    throw new Error("Cannot reach the server. Make sure the backend is running.");
+                }
+                throw error;
+            }
+            
+            console.warn(`[API] Attempt ${i} failed. Retrying in ${backoff * i}ms...`, error.message);
+            await new Promise((resolve) => setTimeout(resolve, backoff * i));
         }
-        throw error;
     }
 }
 
@@ -252,25 +259,49 @@ const notificationsState = {
 
 async function initNotifications() {
     if (!getToken()) return;
-    await Promise.allSettled([fetchNotifications(), registerNotificationServiceWorker()]);
-}
 
+    try {
+        await fetchNotifications();
+    } catch (err) {
+        console.warn("Notifications unavailable");
+    }
+
+    try {
+        await registerNotificationServiceWorker();
+    } catch (err) {
+        console.warn("Service worker unavailable");
+    }
+}
 async function fetchNotifications() {
     try {
         const data = await apiFetch("/notifications");
+
         notificationsState.items = data.notifications || [];
         notificationsState.unreadCount = data.unreadCount || 0;
+
         renderNotificationBell();
 
-        if (!window._notificationsLoadToastShown && notificationsState.unreadCount > 0) {
-            showToast(`You have ${notificationsState.unreadCount} unread reminder${notificationsState.unreadCount === 1 ? "" : "s"}.`, 4500, "info");
+        if (
+            !window._notificationsLoadToastShown &&
+            notificationsState.unreadCount > 0
+        ) {
+            showToast(
+                `You have ${notificationsState.unreadCount} unread reminder${notificationsState.unreadCount === 1 ? "" : "s"}.`,
+                4500,
+                "info"
+            );
             window._notificationsLoadToastShown = true;
         }
+
     } catch (err) {
-        console.warn("Could not load notifications:", err);
+        console.warn("Notifications endpoint not available");
+
+        notificationsState.items = [];
+        notificationsState.unreadCount = 0;
+
+        renderNotificationBell();
     }
 }
-
 function renderNotificationBell() {
     const badge = document.getElementById("notificationBadge");
     const dropdown = document.getElementById("notificationDropdown");
@@ -385,18 +416,27 @@ document.addEventListener("click", (event) => {
 });
 
 async function registerNotificationServiceWorker() {
-    if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
-        return;
-    }
+    if (!("serviceWorker" in navigator)) return;
 
     try {
-        notificationsState.swRegistration = await navigator.serviceWorker.register("/sw.js");
-        requestPushPermission();
+        const response = await fetch("/sw.js");
+
+        if (!response.ok) {
+            console.warn("sw.js not found");
+            return;
+        }
+
+        notificationsState.swRegistration =
+            await navigator.serviceWorker.register("/sw.js");
+
+        if ("Notification" in window) {
+            requestPushPermission();
+        }
+
     } catch (err) {
-        console.warn("Notification service worker failed:", err);
+        console.warn("Service worker disabled");
     }
 }
-
 async function requestPushPermission() {
     if (!getToken()) return;
 

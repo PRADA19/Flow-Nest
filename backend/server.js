@@ -9,22 +9,28 @@ const helmet = require("helmet");
 const mongoSanitize = require("express-mongo-sanitize");
 const morgan = require("morgan");
 const OpenAI = require("openai");
+const compression = require("compression");
 
 require("dotenv").config();
 
-const openai = process.env.OPENAI_API_KEY
-  ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
-  : null;
+let openai = null;
 
-// ================= ENV VALIDATION =================
-if (!process.env.JWT_SECRET) {
-  console.error("🚨 FATAL: JWT_SECRET missing");
-  process.exit(1);
+if (process.env.OPENAI_API_KEY) {
+  try {
+    openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  } catch (err) {
+    console.error("OpenAI init failed:", err.message);
+    openai = null;
+  }
 }
+// ================= ENV VALIDATION =================
+const requiredEnv = ["JWT_SECRET", "COOKIE_SECRET"];
 
-if (!process.env.COOKIE_SECRET) {
-  console.error("🚨 FATAL: COOKIE_SECRET missing");
-  process.exit(1);
+for (const key of requiredEnv) {
+  if (!process.env[key]) {
+    console.error(`🚨 Missing ${key}`);
+    process.exit(1);
+  }
 }
 
 // ================= MODELS =================
@@ -34,36 +40,44 @@ const failover = require("./database/sqliteFailover");
 
 // ================= APP =================
 const app = express();
+app.set("trust proxy", 1);
 
-// ================= SECURITY =================
-app.use(helmet());
+// ================= SECURITY & COMPRESSION =================
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "https://unpkg.com", "https://cdn.jsdelivr.net"],
+      styleSrc: ["'self'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      imgSrc: ["'self'", "data:"],
+      connectSrc: ["'self'"],
+      frameSrc: ["'none'"],
+    },
+  },
+}));
+
+app.use(compression());
 
 app.use(mongoSanitize());
 
 app.use(morgan("combined"));
 
-const DEFAULT_DEV_ORIGINS = [
-  "http://localhost:5500",
-  "http://127.0.0.1:5500",
-  "http://localhost:3456",
-  "http://127.0.0.1:3456",
-  "http://localhost:3000",
-  "http://127.0.0.1:3000",
-];
+const allowedOrigins = [];
 
-const allowedOrigins = (
-  process.env.ALLOWED_ORIGINS ||
-  DEFAULT_DEV_ORIGINS.join(",")
-)
-  .split(",")
-  .map((o) => o.trim())
-  .filter(Boolean);
-
-if (
-  process.env.FRONTEND_URL &&
-  !allowedOrigins.includes(process.env.FRONTEND_URL)
-) {
+if (process.env.FRONTEND_URL) {
   allowedOrigins.push(process.env.FRONTEND_URL);
+}
+
+if (allowedOrigins.length === 0) {
+  allowedOrigins.push(
+    "http://localhost:5500",
+    "http://127.0.0.1:5500",
+    "http://localhost:3456",
+    "http://127.0.0.1:3456",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000"
+  );
 }
 
 const isLocalDevOrigin = (origin) =>
@@ -100,6 +114,25 @@ app.use(express.json({ limit: "10kb" }));
 
 app.use(cookieParser(process.env.COOKIE_SECRET));
 
+// Create dedicated Express Router for consistent /api routing without stripping
+const apiRouter = express.Router();
+app.use("/api", apiRouter);
+
+// Bind app routing methods to apiRouter (exempting health and status diagnostics and settings getters)
+const methods = ["get", "post", "put", "delete", "patch", "options", "head"];
+methods.forEach((method) => {
+  const original = app[method].bind(app);
+  app[method] = (path, ...handlers) => {
+    if (handlers.length === 0) {
+      return original(path);
+    }
+    if (path === "/health" || path === "/status" || path === "/api/health") {
+      return original(path, ...handlers);
+    }
+    return apiRouter[method](path, ...handlers);
+  };
+});
+
 // ================= MIDDLEWARE =================
 const {
   authLimiter,
@@ -118,45 +151,117 @@ const {
 const validateObjectId = require("./middleware/validateObjectId");
 
 // ================= RATE LIMIT =================
-app.use("/tasks", apiLimiter);
-app.use("/dashboard", apiLimiter);
-app.use("/analytics", apiLimiter);
-app.use("/notifications", apiLimiter);
+app.use("/api/tasks", apiLimiter);
+app.use("/api/dashboard", apiLimiter);
+app.use("/api/analytics", apiLimiter);
+app.use("/api/notifications", apiLimiter);
 
 // ================= DATABASE =================
 let isOfflineMode = false;
 let isDatabaseUnavailable = false;
+let isReconnecting = false;
 
 // In-memory stores (dev / lightweight — not persistent across restarts)
 const pushSubscriptions = new Map();
 const userNotifications = new Map();
 
-const connectDB = async () => {
-  try {
-    const mongoUri =
-      process.env.MONGODB_URI || process.env.MONGO_URI;
+// Monitor mongoose connection events
+mongoose.connection.on("connected", () => {
+  console.log("✅ MongoDB connection established");
+  isDatabaseUnavailable = false;
+  isOfflineMode = false;
+});
 
-    if (!mongoUri) {
-      throw new Error("Mongo URI missing");
+mongoose.connection.on("disconnected", () => {
+  console.warn("⚠️ MongoDB disconnected!");
+  if (process.env.NODE_ENV === "production") {
+    isDatabaseUnavailable = true;
+    scheduleBackgroundReconnect();
+  }
+});
+
+mongoose.connection.on("error", (err) => {
+  console.error("🚨 MongoDB connection error:", err.message);
+});
+
+const scheduleBackgroundReconnect = (initialInterval = 5000, maxInterval = 60000) => {
+  if (isReconnecting) return;
+  isReconnecting = true;
+
+  let currentInterval = initialInterval;
+
+  const attemptReconnect = () => {
+    if (mongoose.connection.readyState === 1) {
+      isDatabaseUnavailable = false;
+      isReconnecting = false;
+      return;
     }
 
-    await mongoose.connect(mongoUri, {
-      serverSelectionTimeoutMS: 3000,
-    });
+    console.log("📡 Attempting background MongoDB reconnection...");
+    setTimeout(async () => {
+      try {
+        const mongoUri = process.env.MONGO_URI;
+        if (mongoUri) {
+          await mongoose.connect(mongoUri, {
+            serverSelectionTimeoutMS: 3000,
+          });
+          isDatabaseUnavailable = false;
+          isOfflineMode = false;
+          isReconnecting = false;
+          console.log("✅ MongoDB reconnected successfully in background!");
+          return;
+        }
+      } catch (err) {
+        console.error(`❌ Background MongoDB reconnection failed: ${err.message}. Retrying in ${currentInterval / 1000}s (exponential backoff)...`);
+        currentInterval = Math.min(currentInterval * 2, maxInterval);
+      }
 
-    console.log("✅ MongoDB connected successfully");
-  } catch (err) {
-    console.error("❌ MongoDB connection failed");
-    console.error(err);
+      if (mongoose.connection.readyState !== 1) {
+        attemptReconnect();
+      } else {
+        isReconnecting = false;
+      }
+    }, currentInterval);
+  };
 
-    if (process.env.NODE_ENV === "production") {
-      isDatabaseUnavailable = true;
-      console.error(
-        "🚨 Production mode: failover disabled — API will return 503 until MongoDB is available"
-      );
-    } else {
-      console.warn("⚠️ Development mode: switching to offline failover...");
-      isOfflineMode = true;
+  console.log(`📡 Scheduling background MongoDB reconnection check (initial retry in ${initialInterval / 1000}s)...`);
+  attemptReconnect();
+};
+
+const connectDB = async (retries = 5, initialDelay = 2000) => {
+  const mongoUri = process.env.MONGO_URI;
+
+  if (!mongoUri) {
+    console.error("🚨 FATAL: MONGO_URI missing");
+    process.exit(1);
+  }
+
+  let delay = initialDelay;
+
+  for (let i = 1; i <= retries; i++) {
+    try {
+      await mongoose.connect(mongoUri, {
+        serverSelectionTimeoutMS: 3000,
+      });
+      return;
+    } catch (err) {
+      console.error(`❌ MongoDB connection attempt ${i} failed:`, err.message);
+      if (i < retries) {
+        console.log(`Retrying connection in ${delay / 1000}s (exponential backoff)...`);
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        delay *= 2;
+      } else {
+        if (process.env.NODE_ENV === "production") {
+          isDatabaseUnavailable = true;
+          console.error(
+            "🚨 Production mode: failover disabled — API will return 503 until MongoDB is available"
+          );
+          scheduleBackgroundReconnect();
+        } else {
+          console.warn("⚠️ Development mode: switching to offline failover...");
+          isOfflineMode = true;
+        }
+      }
     }
   }
 };
@@ -531,9 +636,8 @@ app.post(
 
       res.cookie("smarttodo_token", token, {
         httpOnly: true,
-        secure:
-          process.env.NODE_ENV === "production",
-        sameSite: "strict",
+        secure: true,
+        sameSite: "none",
         signed: true,
         path: "/",
         maxAge: 7 * 24 * 60 * 60 * 1000,
@@ -562,9 +666,8 @@ app.post("/auth/logout", (req, res) => {
 
   res.clearCookie("smarttodo_token", {
     httpOnly: true,
-    secure:
-      process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    secure: true,
+    sameSite: "none",
     signed: true,
     path: "/",
   });
@@ -1626,6 +1729,51 @@ app.get("/health", (req, res) => {
   });
 });
 
+// Health check under /api prefix for consistency
+app.get("/api/health", (req, res) => {
+  const database = isDatabaseUnavailable
+    ? "unavailable"
+    : isOfflineMode
+      ? "offline-failover"
+      : "mongodb";
+
+  res.json({
+    status: isDatabaseUnavailable ? "degraded" : "ok",
+    service: "smarttodo-api",
+    database,
+    ai: Boolean(process.env.OPENAI_API_KEY && openai),
+    timestamp: new Date().toISOString(),
+  });
+});
+
+// ================= STATUS / DIAGNOSTICS =================
+app.get("/status", (req, res) => {
+  const database = isDatabaseUnavailable
+    ? "unavailable"
+    : isOfflineMode
+      ? "offline-failover"
+      : "mongodb";
+
+  res.json({
+    status: isDatabaseUnavailable ? "degraded" : "ok",
+    service: "smarttodo-api",
+    database,
+    uptime: process.uptime(),
+    memoryUsage: process.memoryUsage(),
+    platform: process.platform,
+    nodeVersion: process.version,
+    environment: {
+      NODE_ENV: process.env.NODE_ENV || "development",
+      PORT: PORT,
+      hasJwtSecret: Boolean(process.env.JWT_SECRET),
+      hasCookieSecret: Boolean(process.env.COOKIE_SECRET),
+      hasClientUrl: Boolean(process.env.CLIENT_URL || process.env.FRONTEND_URL),
+      hasOpenAiKey: Boolean(process.env.OPENAI_API_KEY)
+    },
+    timestamp: new Date().toISOString(),
+  });
+});
+
 // ================= GLOBAL ERROR HANDLER =================
 app.use((err, req, res, next) => {
   console.error(err);
@@ -1663,7 +1811,7 @@ process.on("SIGTERM", () => shutdown("SIGTERM"));
 // ================= SERVER =================
 const PORT = process.env.PORT || 5003;
 
-const server = app.listen(PORT, () => {
+const server = app.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 SmartTodo Backend running on port ${PORT}`);
   console.log(`   Managed by PM2? Run: npm run pm2:status`);
 });
@@ -1681,4 +1829,29 @@ server.on("error", (err) => {
 
   console.error("Server failed to start:", err);
   process.exit(1);
+});
+
+// Process-wide unhandled promise rejections and uncaught exception handlers
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("🚨 Unhandled Promise Rejection at:", promise, "reason:", reason);
+  try {
+    failover.logSecurityEvent("unhandled_rejection", {
+      message: String(reason?.message || reason),
+      stack: String(reason?.stack || "")
+    });
+  } catch (err) {}
+});
+
+process.on("uncaughtException", (err) => {
+  console.error("🚨 Uncaught Exception:", err.message);
+  try {
+    failover.logSecurityEvent("uncaught_exception", {
+      message: err.message,
+      stack: err.stack
+    });
+  } catch (logErr) {}
+  
+  if (process.env.NODE_ENV !== "production") {
+    process.exit(1);
+  }
 });
