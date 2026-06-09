@@ -8,19 +8,19 @@ const cookieParser = require("cookie-parser");
 const helmet = require("helmet");
 const mongoSanitize = require("express-mongo-sanitize");
 const morgan = require("morgan");
-const OpenAI = require("openai");
+const { GoogleGenerativeAI } = require("@google/generative-ai");
 const compression = require("compression");
 
 require("dotenv").config();
 
-let openai = null;
+let genAI = null;
 
-if (process.env.OPENAI_API_KEY) {
+if (process.env.GEMINI_API_KEY) {
   try {
-    openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
   } catch (err) {
-    console.error("OpenAI init failed:", err.message);
-    openai = null;
+    console.error("Gemini init failed:", err.message);
+    genAI = null;
   }
 }
 // ================= ENV VALIDATION =================
@@ -1578,7 +1578,7 @@ app.post(
       const { message } = req.body;
       const userId = req.user.id;
 
-      if (!process.env.OPENAI_API_KEY || !openai) {
+      if (!process.env.GEMINI_API_KEY || !genAI) {
         return respondAiUnavailable();
       }
 
@@ -1592,14 +1592,15 @@ app.post(
 
       let response;
       try {
-        response = await openai.chat.completions.create({
-          model: "gpt-4o-mini",
-          response_format: { type: "json_object" },
-          temperature: 0.3,
-          messages: [
-            {
-              role: "system",
-              content: `You are SmartTodo AI, a task management assistant.
+        const model = genAI.getGenerativeModel({ 
+          model: "gemini-1.5-flash",
+          generationConfig: {
+            temperature: 0.3,
+            responseMimeType: "application/json",
+          }
+        });
+
+        const systemPrompt = `You are SmartTodo AI, a task management assistant.
 
 User profile:
 - name: ${user.name}
@@ -1646,21 +1647,20 @@ Rules:
 - For "create 5 tasks" use create_multiple_tasks with up to 5 unique titles in data.tasks.
 - When completing, prefer action.data.taskId from the pending list.
 - Be short, clear, and friendly.
-- ONLY return valid JSON.`,
-            },
-            {
-              role: "user",
-              content: message,
-            },
-          ],
-        });
-      } catch (openaiErr) {
-        console.error("OpenAI API error:", openaiErr.message);
+- ONLY return valid JSON.`;
+
+        const result = await model.generateContent([
+          { text: systemPrompt },
+          { text: message }
+        ]);
+
+        response = result.response;
+      } catch (geminiErr) {
+        console.error("Gemini API error:", geminiErr.message);
         return respondAiUnavailable();
       }
 
-      const rawContent =
-        response.choices[0]?.message?.content || "";
+      const rawContent = response.text() || "";
 
       let parsed = parseAiAssistantJson(rawContent);
       let reply;
@@ -1724,7 +1724,7 @@ app.get("/health", (req, res) => {
     status: isDatabaseUnavailable ? "degraded" : "ok",
     service: "smarttodo-api",
     database,
-    ai: Boolean(process.env.OPENAI_API_KEY && openai),
+    ai: Boolean(process.env.GEMINI_API_KEY && genAI),
     timestamp: new Date().toISOString(),
   });
 });
@@ -1741,7 +1741,7 @@ app.get("/api/health", (req, res) => {
     status: isDatabaseUnavailable ? "degraded" : "ok",
     service: "smarttodo-api",
     database,
-    ai: Boolean(process.env.OPENAI_API_KEY && openai),
+    ai: Boolean(process.env.GEMINI_API_KEY && genAI),
     timestamp: new Date().toISOString(),
   });
 });
@@ -1768,7 +1768,7 @@ app.get("/status", (req, res) => {
       hasJwtSecret: Boolean(process.env.JWT_SECRET),
       hasCookieSecret: Boolean(process.env.COOKIE_SECRET),
       hasClientUrl: Boolean(process.env.CLIENT_URL || process.env.FRONTEND_URL),
-      hasOpenAiKey: Boolean(process.env.OPENAI_API_KEY)
+      hasGeminiKey: Boolean(process.env.GEMINI_API_KEY)
     },
     timestamp: new Date().toISOString(),
   });
