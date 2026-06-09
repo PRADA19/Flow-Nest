@@ -200,10 +200,10 @@ const scheduleBackgroundReconnect = (initialInterval = 5000, maxInterval = 60000
     console.log("📡 Attempting background MongoDB reconnection...");
     setTimeout(async () => {
       try {
-        const mongoUri = process.env.MONGO_URI;
+        const mongoUri = process.env.MONGO_URI || process.env.MONGODB_URI;
         if (mongoUri) {
           await mongoose.connect(mongoUri, {
-            serverSelectionTimeoutMS: 3000,
+            serverSelectionTimeoutMS: 30000,
           });
           isDatabaseUnavailable = false;
           isOfflineMode = false;
@@ -229,7 +229,7 @@ const scheduleBackgroundReconnect = (initialInterval = 5000, maxInterval = 60000
 };
 
 const connectDB = async (retries = 5, initialDelay = 2000) => {
-  const mongoUri = process.env.MONGO_URI;
+  const mongoUri = process.env.MONGO_URI || process.env.MONGODB_URI;
 
   if (!mongoUri) {
     console.error("🚨 FATAL: MONGO_URI missing");
@@ -241,7 +241,7 @@ const connectDB = async (retries = 5, initialDelay = 2000) => {
   for (let i = 1; i <= retries; i++) {
     try {
       await mongoose.connect(mongoUri, {
-        serverSelectionTimeoutMS: 3000,
+        serverSelectionTimeoutMS: 30000,
       });
       return;
     } catch (err) {

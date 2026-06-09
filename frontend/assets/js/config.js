@@ -42,7 +42,7 @@ const CONFIG = {
         LOGOUT: "/auth/logout",
         DASHBOARD: "/dashboard",
         ANALYTICS: "/analytics",
-        HEALTH: "/api/health"
+        HEALTH: "/health"
     },
 
     STORAGE_KEYS: {
