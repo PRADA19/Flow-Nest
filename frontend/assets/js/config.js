@@ -29,7 +29,7 @@ function resolveApiBase() {
     return "http://localhost:5003/api";
 }
 
-    return `${origin}/api`;
+    return "https://flow-nest-1.onrender.com/api";
 }
 
 const CONFIG = {
