@@ -162,7 +162,7 @@ Client Request → Middleware Stack → Route Handler → Business Logic → Dat
 
 ### AI Architecture
 
-**AI Provider:** OpenAI GPT-4o-mini
+**AI Provider:** Google Gemini gemini-1.5-flash
 
 **Integration Pattern:** Structured JSON Response
 
@@ -174,7 +174,7 @@ Client Request → Middleware Stack → Route Handler → Business Logic → Dat
    - Task context (all pending tasks with IDs)
    - Allowed actions (create_task, complete_task, list_tasks, daily_plan, schedule_tasks)
    - Response format specification (JSON only)
-4. OpenAI returns structured JSON with action type and data
+4. Gemini returns structured JSON with action type and data
 5. Backend parses and executes the action (database operations)
 6. Backend returns AI reply and action result to frontend
 7. Frontend displays formatted response with markdown parsing
@@ -367,11 +367,11 @@ Client Request → Middleware Stack → Route Handler → Business Logic → Dat
 **Problem it solves:** Large payload sizes  
 **Alternatives:** Nginx compression, Cloudflare compression
 
-#### OpenAI (Node.js SDK)
-**What it is:** OpenAI API client library  
-**Why chosen:** Official SDK, TypeScript support  
-**Problem it solves:** AI-powered features  
-**Alternatives:** Direct API calls, other AI providers (Anthropic, Cohere)
+#### Google Generative AI (Node.js SDK)
+**What it is:** Google Gemini API client library
+**Why chosen:** Official SDK, TypeScript support
+**Problem it solves:** AI-powered features
+**Alternatives:** Direct API calls, other AI providers (Anthropic, Claude)
 
 #### PM2
 **What it is:** Process manager for Node.js  
@@ -490,7 +490,7 @@ backend/
 │   ├── tokenBlacklist.js # Token blacklist
 │   └── validateObjectId.js # ObjectId validation
 ├── services/           # Business logic services
-│   └── openaiService.js # OpenAI integration
+│   └── openaiService.js # Gemini integration
 ├── database/           # Database operations
 │   └── sqliteFailover.js # SQLite failover logic
 ├── scripts/            # Utility scripts
@@ -514,7 +514,7 @@ backend/
 - `server.js` imports and uses all other modules
 - Middleware files are applied to routes in `server.js`
 - Models used by route handlers for database operations
-- Services used by AI endpoint for OpenAI integration
+- Services used by AI endpoint for Gemini integration
 - Database failover used when MongoDB unavailable
 
 ---
@@ -655,7 +655,7 @@ backend/
 **Purpose:** Business logic services
 
 **Files:**
-- `openaiService.js` - OpenAI API integration
+- `openaiService.js` - Gemini API integration
 
 **Responsibilities:**
 - External API integration
@@ -1090,10 +1090,10 @@ try {
    require("dotenv").config();
    ```
 
-3. **Initialize OpenAI:**
+3. **Initialize Gemini:**
    ```javascript
-   if (process.env.OPENAI_API_KEY) {
-     openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+   if (process.env.GEMINI_API_KEY) {
+     genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
    }
    ```
 
@@ -1401,27 +1401,24 @@ app.get("/tasks", authMiddleware, async (req, res) => {
 
 **Service Files:** `backend/services/`
 
-#### OpenAI Service (`openaiService.js`)
+#### Gemini Service (`openaiService.js`)
 
-**Purpose:** Wrapper for OpenAI API
+**Purpose:** Wrapper for Gemini API
 
 **Function:**
 ```javascript
 async function generateAIResponse(systemPrompt, userMessage) {
-  const response = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
-    messages: [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: userMessage }
-    ],
-    temperature: 0.7
-  });
-  return response.choices[0].message.content;
+  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+  const result = await model.generateContent([
+    { text: systemPrompt },
+    { text: userMessage }
+  ]);
+  return result.response.text();
 }
 ```
 
 **Error Handling:**
-- Catches OpenAI errors
+- Catches Gemini errors
 - Returns fallback message: "Sorry, AI is currently unavailable."
 
 **File Location:** `backend/services/openaiService.js`
@@ -2631,7 +2628,7 @@ GET /api/tasks?priority=high&tag=Work
 
 ### How AI Works in This Project
 
-**AI Provider:** OpenAI GPT-4o-mini
+**AI Provider:** Google Gemini gemini-1.5-flash
 
 **Integration Pattern:** Structured JSON response with action execution
 
@@ -2639,7 +2636,7 @@ GET /api/tasks?priority=high&tag=Work
 1. User sends message to `/api/tasks/ai/chat`
 2. Backend fetches user profile and pending tasks
 3. Backend constructs system prompt with context
-4. OpenAI returns structured JSON with action type and data
+4. Gemini returns structured JSON with action type and data
 5. Backend parses and executes the action
 6. Backend returns AI reply and action result to frontend
 7. Frontend displays formatted response
@@ -2707,17 +2704,19 @@ Rules:
 const userMessage = "What should I prioritize today?";
 ```
 
-**OpenAI API Call:**
+**Gemini API Call:**
 ```javascript
-const response = await openai.chat.completions.create({
-  model: "gpt-4o-mini",
-  response_format: { type: "json_object" },
-  temperature: 0.3,
-  messages: [
-    { role: "system", content: systemPrompt },
-    { role: "user", content: userMessage }
-  ]
+const model = genAI.getGenerativeModel({
+  model: "gemini-1.5-flash",
+  generationConfig: {
+    temperature: 0.3,
+    responseMimeType: "application/json"
+  }
 });
+const result = await model.generateContent([
+  { text: systemPrompt },
+  { text: userMessage }
+]);
 ```
 
 **File Location:** `backend/server.js`
@@ -2726,17 +2725,22 @@ const response = await openai.chat.completions.create({
 
 ### API Integration
 
-**OpenAI SDK Usage:**
+**Gemini SDK Usage:**
 ```javascript
-const OpenAI = require("openai");
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-const response = await openai.chat.completions.create({
-  model: "gpt-4o-mini",
-  response_format: { type: "json_object" },
-  temperature: 0.3,
-  messages: [...]
+const model = genAI.getGenerativeModel({
+  model: "gemini-1.5-flash",
+  generationConfig: {
+    temperature: 0.3,
+    responseMimeType: "application/json"
+  }
 });
+const result = await model.generateContent([
+  { text: systemPrompt },
+  { text: userMessage }
+]);
 ```
 
 **Response Format:**
@@ -2751,21 +2755,21 @@ const response = await openai.chat.completions.create({
 ### Failure Handling
 
 **AI Unavailable Scenarios:**
-1. No OPENAI_API_KEY configured
-2. OpenAI API error (rate limit, downtime)
-3. Invalid response format from OpenAI
+1. No GEMINI_API_KEY configured
+2. Gemini API error (rate limit, downtime)
+3. Invalid response format from Gemini
 4. Action execution error
 
 **Failure Handling:**
 ```javascript
-if (!process.env.OPENAI_API_KEY || !openai) {
+if (!process.env.GEMINI_API_KEY || !genAI) {
   return respondAiUnavailable();
 }
 
 try {
-  const response = await openai.chat.completions.create(...);
-} catch (openaiErr) {
-  console.error("OpenAI API error:", openaiErr.message);
+  const result = await model.generateContent([...]);
+} catch (geminiErr) {
+  console.error("Gemini API error:", geminiErr.message);
   return respondAiUnavailable();
 }
 
@@ -2798,7 +2802,7 @@ if (err.message === "Unauthorized") {
 4. **No Image Support:** AI cannot process images
 5. **No Voice Support:** AI cannot process voice input
 6. **Rate Limited:** 20 requests per minute per IP
-7. **Single Model:** Only uses GPT-4o-mini (no model selection)
+7. **Single Model:** Only uses gemini-1.5-flash (no model selection)
 8. **No Fine-tuning:** Uses base model without fine-tuning
 9. **No RAG:** No retrieval-augmented generation
 10. **No Multi-turn Context:** Each request is independent (except task context)
@@ -2850,7 +2854,7 @@ services:
         sync: false
       - key: CLIENT_URL
         sync: false
-      - key: OPENAI_API_KEY
+      - key: GEMINI_API_KEY
         sync: false
       - key: ALLOWED_ORIGINS
         sync: false
@@ -2863,7 +2867,7 @@ services:
 - `JWT_SECRET` - JWT signing secret
 - `COOKIE_SECRET` - Cookie signing secret
 - `CLIENT_URL` - Frontend URL for CORS
-- `OPENAI_API_KEY` - OpenAI API key
+- `GEMINI_API_KEY` - Google Gemini API key
 - `ALLOWED_ORIGINS` - Allowed CORS origins
 
 **Health Check:**
@@ -2945,7 +2949,7 @@ JWT_SECRET=CHANGE_THIS_TO_A_STRONG_RANDOM_STRING_IN_PRODUCTION
 COOKIE_SECRET=CHANGE_THIS_TO_A_STRONG_RANDOM_STRING_IN_PRODUCTION
 CLIENT_URL=https://your-frontend-vercel-app.vercel.app
 ALLOWED_ORIGINS=https://your-frontend-vercel-app.vercel.app
-OPENAI_API_KEY=sk-proj-xxxxxxxxxxxxxxxxxxxxxxxx
+GEMINI_API_KEY=your-gemini-api-key-here
 ```
 
 **Frontend Environment Variables (.env.example):**
@@ -3188,10 +3192,10 @@ window.__SMARTTODO_CONFIG__ = {
 
 ### Challenge 4: AI Response Parsing
 
-**Problem:** OpenAI may return invalid JSON or markdown-wrapped JSON
+**Problem:** Gemini may return invalid JSON or markdown-wrapped JSON
 
 **Solution:**
-- Set `response_format: { type: "json_object" }` in OpenAI API call
+- Set `responseMimeType: "application/json"` in Gemini API call
 - Implemented JSON parsing with error handling
 - Fallback to error message if parsing fails
 - Sanitized error messages
@@ -3298,7 +3302,7 @@ window.__SMARTTODO_CONFIG__ = {
    - HTML5, CSS3, Vanilla JavaScript, FullCalendar, Chart.js, Phosphor Icons, Google Fonts
 
 3. **What technologies did you use for the backend?**
-   - Node.js, Express.js, MongoDB, Mongoose, JWT, bcrypt, OpenAI API
+   - Node.js, Express.js, MongoDB, Mongoose, JWT, bcrypt, Google Gemini API
 
 4. **How does authentication work in your application?**
    - JWT-based authentication with HTTP-only cookies. User logs in, server generates JWT token, stores in cookie, subsequent requests include cookie, middleware verifies token and attaches user info to request.
@@ -3313,7 +3317,7 @@ window.__SMARTTODO_CONFIG__ = {
    - MongoDB is a NoSQL document database. I chose it for its flexible schema, JSON-like documents, and scalability.
 
 8. **How does the AI assistant work?**
-   - User sends message to backend, backend fetches user's tasks, sends context to OpenAI GPT-4o-mini with structured prompt, AI returns JSON with action type and data, backend executes action and returns result.
+   - User sends message to backend, backend fetches user's tasks, sends context to Google Gemini gemini-1.5-flash with structured prompt, AI returns JSON with action type and data, backend executes action and returns result.
 
 9. **What is rate limiting and why is it important?**
    - Rate limiting restricts the number of requests a user can make in a time period. It prevents API abuse, DDoS attacks, and brute force attacks.
@@ -3463,7 +3467,7 @@ window.__SMARTTODO_CONFIG__ = {
 
 "Flow Nest is a full-stack task management application I developed to help users stay organized and productive. I built the backend with Node.js and Express, using MongoDB for data storage and JWT for authentication. The frontend uses vanilla JavaScript with a multi-page architecture, featuring a task list, calendar view, dashboard with analytics, and an AI-powered chat assistant.
 
-Key features include task CRUD operations with priorities and tags, productivity analytics with Chart.js visualizations, gamification with XP and levels, and AI integration with OpenAI GPT-4o-mini that can create and complete tasks based on natural language. I implemented security measures like rate limiting, input validation, SQL injection prevention, and CSP headers. The app is deployed on Render for the backend and Vercel for the frontend."
+Key features include task CRUD operations with priorities and tags, productivity analytics with Chart.js visualizations, gamification with XP and levels, and AI integration with Google Gemini gemini-1.5-flash that can create and complete tasks based on natural language. I implemented security measures like rate limiting, input validation, SQL injection prevention, and CSP headers. The app is deployed on Render for the backend and Vercel for the frontend."
 
 ---
 
@@ -3473,7 +3477,7 @@ Key features include task CRUD operations with priorities and tags, productivity
 
 For the backend, I implemented RESTful API endpoints for task management, authentication, dashboard statistics, and analytics. I used JWT with HTTP-only cookies for secure authentication, bcrypt for password hashing, and implemented custom middleware for rate limiting, input validation, and security headers. The database uses Mongoose ODM with proper indexing for performance, and I also implemented a SQLite failover system for offline capability.
 
-The AI assistant is a key feature that integrates with OpenAI GPT-4o-mini. It can understand natural language requests to create tasks, complete tasks, suggest priorities, and plan daily schedules. I designed a structured JSON response system where the AI returns action types and data, which the backend executes safely.
+The AI assistant is a key feature that integrates with Google Gemini gemini-1.5-flash. It can understand natural language requests to create tasks, complete tasks, suggest priorities, and plan daily schedules. I designed a structured JSON response system where the AI returns action types and data, which the backend executes safely.
 
 For the frontend, I used vanilla JavaScript with a modular architecture. Each page has its own JavaScript file, and shared utilities are in utils.js. I implemented client-side state management using localStorage, API communication with retry logic, and responsive design with dark mode support. The analytics page uses Chart.js for data visualization, and the calendar uses FullCalendar.
 
@@ -3489,7 +3493,7 @@ The authentication system uses JWT with HTTP-only signed cookies, providing stat
 
 For security, I implemented multiple layers: Helmet for security headers including a custom CSP, express-mongo-sanitize for NoSQL injection prevention, custom validation middleware with schema definitions for mass assignment protection, and three-tier rate limiting (auth, AI, and general API). Passwords are hashed with bcrypt using 10 salt rounds.
 
-The AI integration is particularly interesting. I designed a structured prompt engineering approach where the system prompt includes user profile, task context, and allowed action types. OpenAI returns JSON with action type (create_task, complete_task, daily_plan, schedule_tasks) and data. The backend parses this JSON, validates it, executes the corresponding database operation, and returns results. This provides type-safe action execution while maintaining conversational AI capabilities.
+The AI integration is particularly interesting. I designed a structured prompt engineering approach where the system prompt includes user profile, task context, and allowed action types. Gemini returns JSON with action type (create_task, complete_task, daily_plan, schedule_tasks) and data. The backend parses this JSON, validates it, executes the corresponding database operation, and returns results. This provides type-safe action execution while maintaining conversational AI capabilities.
 
 The database layer uses MongoDB with Mongoose. I defined proper schemas with indexes on frequently queried fields (userId, completed, dueDate, email). I also implemented a SQLite failover system that activates when MongoDB is unavailable, storing data in tenant-isolated JSON files with security event logging. This provides graceful degradation and offline capability.
 
@@ -3598,7 +3602,7 @@ Deployment uses Render for the backend with PM2 process management and health ch
 3. **Authentication & Authorization:** JWT-based authentication with role-based access
 4. **Database Design:** Schema design, relationships, indexes, queries
 5. **Security Best Practices:** OWASP Top 10 mitigation, secure coding practices
-6. **API Integration:** OpenAI API integration with structured responses
+6. **API Integration:** Google Gemini API integration with structured responses
 7. **Error Handling:** Global error handling, try-catch blocks, user-friendly messages
 8. **Middleware Pattern:** Express middleware for security, validation, logging
 9. **State Management:** Client-side state with localStorage, in-memory state

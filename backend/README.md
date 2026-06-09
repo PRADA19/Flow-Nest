@@ -40,4 +40,4 @@ npm run pm2:start             # start clean single instance
 
 ## Environment
 
-Copy `.env.example` to `.env` and set `JWT_SECRET`, `COOKIE_SECRET`, `MONGO_URI`, `OPENAI_API_KEY`.
+Copy `.env.example` to `.env` and set `JWT_SECRET`, `COOKIE_SECRET`, `MONGO_URI`, `GEMINI_API_KEY`.

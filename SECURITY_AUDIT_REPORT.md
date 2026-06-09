@@ -235,9 +235,9 @@ This report provides a comprehensive security and production readiness audit of 
 - See Medium Priority #3 for structured logging
 
 ### A10: Server-Side Request Forgery (SSRF)
-**Status:** MITIGATED  
+**Status:** MITIGATED
 - No external URL fetching from user input detected
-- OpenAI API key is server-side only
+- Gemini API key is server-side only
 
 ---
 

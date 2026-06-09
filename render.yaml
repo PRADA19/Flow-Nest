@@ -20,7 +20,7 @@ services:
         sync: false
       - key: CLIENT_URL
         sync: false
-      - key: OPENAI_API_KEY
+      - key: GEMINI_API_KEY
         sync: false
       - key: ALLOWED_ORIGINS
         sync: false

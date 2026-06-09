@@ -45,7 +45,7 @@ Required:
 Optional:
 - `CLIENT_URL` - Frontend URL for CORS
 - `ALLOWED_ORIGINS` - Allowed CORS origins
-- `OPENAI_API_KEY` - OpenAI API key for AI features
+- `GEMINI_API_KEY` - Google Gemini API key for AI features
 
 ### Frontend Configuration
 
