@@ -26,10 +26,10 @@ function resolveApiBase() {
     const isLocal = hostname === "localhost" || hostname === "127.0.0.1";
 
     if (isLocal) {
-    return "http://localhost:5003/api";
-}
+        return "https://flow-nest-2.onrender.com/api";
+    }
 
-    return "https://flow-nest-1.onrender.com/api";
+    return "https://flow-nest-2.onrender.com/api";
 }
 
 const CONFIG = {
