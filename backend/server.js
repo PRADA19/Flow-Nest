@@ -65,9 +65,19 @@ app.use(morgan("combined"));
 
 const allowedOrigins = [];
 
-if (process.env.FRONTEND_URL) {
-  allowedOrigins.push(process.env.FRONTEND_URL);
-}
+const addOrigin = (originStr) => {
+  if (!originStr) return;
+  originStr.split(",").forEach(orig => {
+    const trimmed = orig.trim().replace(/\/$/, "");
+    if (trimmed && !allowedOrigins.includes(trimmed)) {
+      allowedOrigins.push(trimmed);
+    }
+  });
+};
+
+addOrigin(process.env.FRONTEND_URL);
+addOrigin(process.env.CLIENT_URL);
+addOrigin(process.env.ALLOWED_ORIGINS);
 
 if (allowedOrigins.length === 0) {
   allowedOrigins.push(
@@ -362,7 +372,7 @@ const updateTask = async (id, userId, updateData) => {
     },
     cleanData,
     {
-      new: true,
+      returnDocument: "after",
     }
   );
 };
@@ -1590,17 +1600,7 @@ app.post(
       const tasks = await findTasks({ userId });
       const taskContext = buildTaskContextForAi(tasks);
 
-      let response;
-      try {
-        const model = genAI.getGenerativeModel({ 
-          model: "gemini-1.5-flash",
-          generationConfig: {
-            temperature: 0.3,
-            responseMimeType: "application/json",
-          }
-        });
-
-        const systemPrompt = `You are SmartTodo AI, a task management assistant.
+      const systemPrompt = `You are SmartTodo AI, a task management assistant.
 
 User profile:
 - name: ${user.name}
@@ -1649,14 +1649,39 @@ Rules:
 - Be short, clear, and friendly.
 - ONLY return valid JSON.`;
 
-        const result = await model.generateContent([
-          { text: systemPrompt },
-          { text: message }
-        ]);
+      const modelsToTry = [
+        "gemini-2.5-flash",
+        "gemini-flash-latest",
+        "gemini-flash-lite-latest"
+      ];
 
-        response = result.response;
-      } catch (geminiErr) {
-        console.error("Gemini API error:", geminiErr.message);
+      let response;
+      let errorMsgs = [];
+
+      for (const modelName of modelsToTry) {
+        try {
+          const model = genAI.getGenerativeModel({ 
+            model: modelName,
+            generationConfig: {
+              temperature: 0.3,
+              responseMimeType: "application/json",
+            }
+          });
+          const result = await model.generateContent([
+            { text: systemPrompt },
+            { text: message }
+          ]);
+          response = result.response;
+          console.log(`✓ AI response successfully generated using model: ${modelName}`);
+          break;
+        } catch (geminiErr) {
+          console.warn(`⚠️ Model ${modelName} failed: ${geminiErr.message}`);
+          errorMsgs.push(`${modelName}: ${geminiErr.message}`);
+        }
+      }
+
+      if (!response) {
+        console.error("All Gemini models failed:", errorMsgs.join(" | "));
         return respondAiUnavailable();
       }
 

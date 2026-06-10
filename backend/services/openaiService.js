@@ -12,6 +12,7 @@ if (process.env.GEMINI_API_KEY) {
   }
 }
 
+
 // Main function to generate AI response
 async function generateAIResponse(systemPrompt, userMessage) {
   if (!genAI) {
@@ -20,7 +21,7 @@ async function generateAIResponse(systemPrompt, userMessage) {
 
   try {
     const model = genAI.getGenerativeModel({ 
-      model: "gemini-1.5-flash",
+      model: "gemini-2.5-flash",
       generationConfig: {
         temperature: 0.7,
       }

@@ -162,7 +162,7 @@ Client Request → Middleware Stack → Route Handler → Business Logic → Dat
 
 ### AI Architecture
 
-**AI Provider:** Google Gemini gemini-1.5-flash
+**AI Provider:** Google Gemini gemini-2.0-flash
 
 **Integration Pattern:** Structured JSON Response
 
@@ -1408,7 +1408,7 @@ app.get("/tasks", authMiddleware, async (req, res) => {
 **Function:**
 ```javascript
 async function generateAIResponse(systemPrompt, userMessage) {
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
   const result = await model.generateContent([
     { text: systemPrompt },
     { text: userMessage }
@@ -2628,7 +2628,7 @@ GET /api/tasks?priority=high&tag=Work
 
 ### How AI Works in This Project
 
-**AI Provider:** Google Gemini gemini-1.5-flash
+**AI Provider:** Google Gemini gemini-2.0-flash
 
 **Integration Pattern:** Structured JSON response with action execution
 
@@ -2707,7 +2707,7 @@ const userMessage = "What should I prioritize today?";
 **Gemini API Call:**
 ```javascript
 const model = genAI.getGenerativeModel({
-  model: "gemini-1.5-flash",
+  model: "gemini-2.0-flash",
   generationConfig: {
     temperature: 0.3,
     responseMimeType: "application/json"
@@ -2731,7 +2731,7 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 const model = genAI.getGenerativeModel({
-  model: "gemini-1.5-flash",
+  model: "gemini-2.0-flash",
   generationConfig: {
     temperature: 0.3,
     responseMimeType: "application/json"
@@ -2802,7 +2802,7 @@ if (err.message === "Unauthorized") {
 4. **No Image Support:** AI cannot process images
 5. **No Voice Support:** AI cannot process voice input
 6. **Rate Limited:** 20 requests per minute per IP
-7. **Single Model:** Only uses gemini-1.5-flash (no model selection)
+7. **Single Model:** Only uses gemini-2.0-flash (no model selection)
 8. **No Fine-tuning:** Uses base model without fine-tuning
 9. **No RAG:** No retrieval-augmented generation
 10. **No Multi-turn Context:** Each request is independent (except task context)
@@ -3317,7 +3317,7 @@ window.__SMARTTODO_CONFIG__ = {
    - MongoDB is a NoSQL document database. I chose it for its flexible schema, JSON-like documents, and scalability.
 
 8. **How does the AI assistant work?**
-   - User sends message to backend, backend fetches user's tasks, sends context to Google Gemini gemini-1.5-flash with structured prompt, AI returns JSON with action type and data, backend executes action and returns result.
+   - User sends message to backend, backend fetches user's tasks, sends context to Google Gemini gemini-2.0-flash with structured prompt, AI returns JSON with action type and data, backend executes action and returns result.
 
 9. **What is rate limiting and why is it important?**
    - Rate limiting restricts the number of requests a user can make in a time period. It prevents API abuse, DDoS attacks, and brute force attacks.
@@ -3467,7 +3467,7 @@ window.__SMARTTODO_CONFIG__ = {
 
 "Flow Nest is a full-stack task management application I developed to help users stay organized and productive. I built the backend with Node.js and Express, using MongoDB for data storage and JWT for authentication. The frontend uses vanilla JavaScript with a multi-page architecture, featuring a task list, calendar view, dashboard with analytics, and an AI-powered chat assistant.
 
-Key features include task CRUD operations with priorities and tags, productivity analytics with Chart.js visualizations, gamification with XP and levels, and AI integration with Google Gemini gemini-1.5-flash that can create and complete tasks based on natural language. I implemented security measures like rate limiting, input validation, SQL injection prevention, and CSP headers. The app is deployed on Render for the backend and Vercel for the frontend."
+Key features include task CRUD operations with priorities and tags, productivity analytics with Chart.js visualizations, gamification with XP and levels, and AI integration with Google Gemini gemini-2.0-flash that can create and complete tasks based on natural language. I implemented security measures like rate limiting, input validation, SQL injection prevention, and CSP headers. The app is deployed on Render for the backend and Vercel for the frontend."
 
 ---
 
@@ -3477,7 +3477,7 @@ Key features include task CRUD operations with priorities and tags, productivity
 
 For the backend, I implemented RESTful API endpoints for task management, authentication, dashboard statistics, and analytics. I used JWT with HTTP-only cookies for secure authentication, bcrypt for password hashing, and implemented custom middleware for rate limiting, input validation, and security headers. The database uses Mongoose ODM with proper indexing for performance, and I also implemented a SQLite failover system for offline capability.
 
-The AI assistant is a key feature that integrates with Google Gemini gemini-1.5-flash. It can understand natural language requests to create tasks, complete tasks, suggest priorities, and plan daily schedules. I designed a structured JSON response system where the AI returns action types and data, which the backend executes safely.
+The AI assistant is a key feature that integrates with Google Gemini gemini-2.0-flash. It can understand natural language requests to create tasks, complete tasks, suggest priorities, and plan daily schedules. I designed a structured JSON response system where the AI returns action types and data, which the backend executes safely.
 
 For the frontend, I used vanilla JavaScript with a modular architecture. Each page has its own JavaScript file, and shared utilities are in utils.js. I implemented client-side state management using localStorage, API communication with retry logic, and responsive design with dark mode support. The analytics page uses Chart.js for data visualization, and the calendar uses FullCalendar.
 

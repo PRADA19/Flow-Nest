@@ -43,7 +43,4 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Email already has unique index, ensure it's indexed
-userSchema.index({ email: 1 });
-
 module.exports = mongoose.model("User", userSchema);
