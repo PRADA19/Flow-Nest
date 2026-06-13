@@ -222,6 +222,51 @@ function initDueRemindersToggle() {
     });
 }
 
+async function initServerNotificationToggles() {
+    const emailInput = document.getElementById("settingsEmailRemindersToggle");
+    const pushInput = document.getElementById("settingsPushRemindersToggle");
+
+    if (!emailInput || !pushInput) return;
+
+    const isLoggedIn = Boolean(getToken());
+    if (!isLoggedIn) {
+        emailInput.disabled = true;
+        pushInput.disabled = true;
+        return;
+    }
+
+    // Load notification settings from backend
+    try {
+        const settings = await apiFetch("/notifications/settings");
+        emailInput.checked = Boolean(settings.emailEnabled);
+        pushInput.checked = Boolean(settings.pushEnabled);
+    } catch (err) {
+        console.warn("Failed to load server notification settings:", err.message);
+        emailInput.checked = false;
+        pushInput.checked = false;
+    }
+
+    // Sync state changes immediately with the server
+    const saveSettings = async () => {
+        try {
+            await apiFetch("/notifications/settings", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    emailEnabled: emailInput.checked,
+                    pushEnabled: pushInput.checked
+                })
+            });
+            showToast("Notification preferences updated.", 2000, "success");
+        } catch (err) {
+            showToast("Failed to update preferences: " + (err.message || err), 4000, "error");
+        }
+    };
+
+    emailInput.addEventListener("change", saveSettings);
+    pushInput.addEventListener("change", saveSettings);
+}
+
 function bindSettingsActions() {
     document
         .getElementById("settingsLogoutBtn")
@@ -288,6 +333,7 @@ function initSettingsPage() {
     );
 
     initDueRemindersToggle();
+    initServerNotificationToggles();
     bindSettingsActions();
     loadAccountFromDashboard();
 }

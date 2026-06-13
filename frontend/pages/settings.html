@@ -193,11 +193,35 @@
                             <div class="settings-card__body settings-card__body--rows">
                                 <div class="settings-row">
                                     <div class="settings-row__text">
-                                        <span class="settings-row__title">Enable Due Date Reminders</span>
-                                        <span class="settings-row__desc">Browser alert 1 hour before a task is due (while this tab is open)</span>
+                                        <span class="settings-row__title">In-App / Browser Reminders</span>
+                                        <span class="settings-row__desc">Browser alert 1 hour before a task is due (while tab is open)</span>
                                     </div>
                                     <label class="settings-toggle" for="settingsDueRemindersToggle">
                                         <input type="checkbox" id="settingsDueRemindersToggle" class="settings-toggle__input" aria-label="Enable due date reminders">
+                                        <span class="settings-toggle__track" aria-hidden="true">
+                                            <span class="settings-toggle__thumb"></span>
+                                        </span>
+                                    </label>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row__text">
+                                        <span class="settings-row__title">Email Notifications</span>
+                                        <span class="settings-row__desc">Receive digest summaries and task due reminders via email</span>
+                                    </div>
+                                    <label class="settings-toggle" for="settingsEmailRemindersToggle">
+                                        <input type="checkbox" id="settingsEmailRemindersToggle" class="settings-toggle__input" aria-label="Enable email reminders">
+                                        <span class="settings-toggle__track" aria-hidden="true">
+                                            <span class="settings-toggle__thumb"></span>
+                                        </span>
+                                    </label>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row__text">
+                                        <span class="settings-row__title">Push Notifications</span>
+                                        <span class="settings-row__desc">Receive alerts on your devices when tasks are approaching due date</span>
+                                    </div>
+                                    <label class="settings-toggle" for="settingsPushRemindersToggle">
+                                        <input type="checkbox" id="settingsPushRemindersToggle" class="settings-toggle__input" aria-label="Enable push notifications">
                                         <span class="settings-toggle__track" aria-hidden="true">
                                             <span class="settings-toggle__thumb"></span>
                                         </span>

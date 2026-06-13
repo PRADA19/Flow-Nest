@@ -1118,6 +1118,336 @@ app.post(
   }
 );
 
+// ==========================================
+// FLOWNEST REMINDER SYSTEM DATABASE MODELS
+// ==========================================
+
+const notificationSettingsSchema = new mongoose.Schema({
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    unique: true,
+    required: true
+  },
+  emailEnabled: {
+    type: Boolean,
+    default: true
+  },
+  pushEnabled: {
+    type: Boolean,
+    default: true
+  }
+});
+
+const notificationLogSchema = new mongoose.Schema({
+  taskId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Task",
+    required: true
+  },
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true
+  },
+  offsetMinutes: {
+    type: Number,
+    required: true
+  },
+  sentAt: {
+    type: Date,
+    default: Date.now
+  }
+});
+
+// Compound unique index to prevent duplicate deliveries under race conditions
+notificationLogSchema.index({ taskId: 1, offsetMinutes: 1, userId: 1 }, { unique: true });
+notificationLogSchema.index({ userId: 1 });
+notificationLogSchema.index({ taskId: 1, offsetMinutes: 1 });
+
+const NotificationSettings = mongoose.model("NotificationSettings", notificationSettingsSchema);
+const NotificationLog = mongoose.model("NotificationLog", notificationLogSchema);
+
+// ==========================================
+// FLOWNEST NODEMAILER SMTP TRANSPORTER
+// ==========================================
+const nodemailer = require("nodemailer");
+
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST || "smtp.gmail.com",
+  port: Number(process.env.SMTP_PORT || 587),
+  secure: Number(process.env.SMTP_PORT) === 465,
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
+});
+
+transporter.verify((error, success) => {
+  if (error) {
+    console.warn("⚠️ SMTP connection failed. Email reminders are offline:", error.message);
+  } else {
+    console.log("🚀 SMTP connection successful. Mailer is ready.");
+  }
+});
+
+// ==========================================
+// GLOBAL NOTIFICATION SENDER (FCM / PWA Ready)
+// ==========================================
+async function sendNotification(userId, title, body) {
+  try {
+    let settings = await NotificationSettings.findOne({ userId });
+    if (!settings) {
+      settings = await NotificationSettings.create({ userId });
+    }
+
+    const user = await findUserById(userId);
+    if (!user) {
+      throw new Error(`User not found: ${userId}`);
+    }
+
+    let emailSent = false;
+    let pushSent = false;
+
+    // Email dispatch channel
+    if (settings.emailEnabled && user.email) {
+      const mailOptions = {
+        from: process.env.FROM_EMAIL || `"FlowNest Reminders" <${process.env.SMTP_USER}>`,
+        to: user.email,
+        subject: title,
+        html: `
+          <div style="font-family: 'Inter', sans-serif; background-color: #f8fafc; padding: 32px 16px; color: #1e293b;">
+            <div style="max-width: 580px; margin: 0 auto; background: white; border-radius: 20px; border: 1px solid #e2e8f0; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03); overflow: hidden;">
+              <div style="background: linear-gradient(135deg, #E2AFFF, #D0D1FF); padding: 32px 24px; text-align: center; border-bottom: 1px solid #e2e8f0;">
+                <h1 style="margin: 0; color: #1e293b; font-size: 24px; font-weight: 700; letter-spacing: -0.5px;">Flow Nest</h1>
+                <p style="margin: 4px 0 0 0; color: #475569; font-size: 14px;">Plan today. Achieve tomorrow.</p>
+              </div>
+              <div style="padding: 32px 24px;">
+                <h3 style="margin-top: 0; color: #0f172a; font-size: 18px; font-weight: 600;">${title}</h3>
+                <p style="color: #475569; font-size: 15px; line-height: 1.6; margin-bottom: 0;">${body}</p>
+              </div>
+              <div style="background: #f8fafc; padding: 20px 24px; border-top: 1px solid #e2e8f0; text-align: center; font-size: 12px; color: #94a3b8;">
+                <p style="margin: 0;">You are receiving this because you enabled email reminders on Flow Nest.</p>
+                <p style="margin: 6px 0 0 0;"><a href="file:///d:/Smarttodo/frontend/pages/settings.html" style="color: #8B5CF6; text-decoration: none; font-weight: 600;">Manage Notification Preferences</a></p>
+              </div>
+            </div>
+          </div>
+        `
+      };
+
+      await transporter.sendMail(mailOptions);
+      emailSent = true;
+      console.log(`✉️ Notification email sent to ${user.email}`);
+    }
+
+    // Push Notification placeholder for future FCM/PWA token registration integration
+    if (settings.pushEnabled) {
+      // Future FCM hook goes here:
+      // await admin.messaging().sendToDevice(user.fcmToken, { ... });
+      pushSent = true;
+      console.log(`📱 Native Push placeholder triggered for user ${user.name}`);
+    }
+
+    return { emailSent, pushSent };
+  } catch (error) {
+    console.error(`❌ sendNotification failed for user ${userId}:`, error.message);
+    throw error;
+  }
+}
+
+// ==========================================
+// SCHEDULER SWEEP & PROCESSING LOGIC
+// ==========================================
+async function processReminderQueues() {
+  const now = new Date();
+  
+  // Find all incomplete tasks
+  const tasks = await Task.find({ completed: false });
+  console.log(`[Scheduler] Sweeping ${tasks.length} active tasks for reminders...`);
+
+  // Target offsets: 3 days (4320m), 2 days (2880m), 1 day (1440m), 3 hours (180m), 1 hour (60m)
+  const TARGET_OFFSETS = [
+    { label: "3 days", minutes: 4320, windowMin: 15 },
+    { label: "2 days", minutes: 2880, windowMin: 15 },
+    { label: "1 day", minutes: 1440, windowMin: 15 },
+    { label: "3 hours", minutes: 180, windowMin: 10 },
+    { label: "1 hour", minutes: 60, windowMin: 10 }
+  ];
+
+  let taskRemindersSent = 0;
+
+  for (const task of tasks) {
+    if (!task.dueDate) continue;
+
+    const dueDate = new Date(task.dueDate);
+    const msUntilDue = dueDate - now;
+    const minutesUntilDue = Math.round(msUntilDue / (60 * 1000));
+
+    // Skip overdue tasks (handled collectively in the daily digest)
+    if (minutesUntilDue <= 0) continue;
+
+    for (const offset of TARGET_OFFSETS) {
+      const diff = Math.abs(minutesUntilDue - offset.minutes);
+
+      // If task is within target trigger time window
+      if (diff <= offset.windowMin) {
+        try {
+          // Double check database log to enforce strict idempotency
+          const existing = await NotificationLog.findOne({
+            taskId: task._id,
+            offsetMinutes: offset.minutes,
+            userId: task.userId
+          });
+
+          if (existing) continue;
+
+          // Dispatch notification
+          const subject = `⏰ Reminder: "${task.title}" is due in ${offset.label}!`;
+          const body = `Your task <strong>"${task.title}"</strong> is due in <strong>${offset.label}</strong> (on ${dueDate.toLocaleString()}). Get it done to keep your momentum going!`;
+
+          await sendNotification(task.userId, subject, body);
+
+          // Write log entry only after successful dispatch
+          await NotificationLog.create({
+            taskId: task._id,
+            userId: task.userId,
+            offsetMinutes: offset.minutes
+          });
+
+          taskRemindersSent++;
+        } catch (err) {
+          if (err.code === 11000) {
+            console.log(`[Scheduler] Suppressed duplicate send under unique constraint (Task: ${task._id}, Offset: ${offset.minutes})`);
+          } else {
+            console.error(`[Scheduler] Error handling task reminder ${task._id}:`, err.message);
+          }
+        }
+      }
+    }
+  }
+
+  // --- DAILY OVERDUE SUMMARY DIGEST ---
+  // Overdue summaries use a custom offsetMinutes sentinel: 99999
+  let overdueDigestSent = 0;
+  const activeUsers = await User.find({});
+
+  for (const user of activeUsers) {
+    try {
+      const overdueTasks = await Task.find({
+        userId: user._id,
+        completed: false,
+        dueDate: { $lt: now }
+      });
+
+      if (overdueTasks.length === 0) continue;
+
+      // Check if user was already alerted today (since local midnight)
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+
+      const existingDigestLog = await NotificationLog.findOne({
+        userId: user._id,
+        offsetMinutes: 99999,
+        sentAt: { $gte: todayStart }
+      });
+
+      if (existingDigestLog) continue;
+
+      // Compile items into HTML format
+      const taskListHtml = overdueTasks.map(t => {
+        const dueStr = t.dueDate ? new Date(t.dueDate).toLocaleDateString() : "No date";
+        const pLabel = (t.priority || "medium").toUpperCase();
+        return `<li style="margin-bottom: 8px;"><strong>${t.title}</strong> (Due: ${dueStr} | Priority: ${pLabel})</li>`;
+      }).join("");
+
+      const subject = `🔥 Action Required: You have ${overdueTasks.length} overdue tasks!`;
+      const body = `
+        <p>Hi ${user.name},</p>
+        <p>You have <strong>${overdueTasks.length}</strong> tasks that are currently overdue. Here is your daily summary:</p>
+        <ul style="padding-left: 20px; color: #475569;">
+          ${taskListHtml}
+        </ul>
+        <p>Complete them today to maintain your streak and earn extra XP!</p>
+      `;
+
+      await sendNotification(user._id, subject, body);
+
+      // Log daily digest send event
+      await NotificationLog.create({
+        taskId: user._id, // User ID used as placeholder taskId for user-level daily digest logs
+        userId: user._id,
+        offsetMinutes: 99999
+      });
+
+      overdueDigestSent++;
+    } catch (err) {
+      if (err.code === 11000) {
+        console.log(`[Scheduler] Suppressed duplicate daily digest (User: ${user._id})`);
+      } else {
+        console.error(`[Scheduler] Error handling daily digest for user ${user._id}:`, err.message);
+      }
+    }
+  }
+
+  return {
+    taskRemindersSent,
+    overdueDigestSent
+  };
+}
+
+// ==========================================
+// REMINDER SYSTEM API ENDPOINTS
+// ==========================================
+
+// 1. GET /notifications/settings - returns user configuration
+app.get("/notifications/settings", authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    let settings = await NotificationSettings.findOne({ userId });
+    if (!settings) {
+      settings = await NotificationSettings.create({ userId });
+    }
+    res.json(settings);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to load notification settings" });
+  }
+});
+
+// 2. POST /notifications/settings - creates or updates configuration
+app.post("/notifications/settings", authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { emailEnabled, pushEnabled } = req.body;
+
+    const settings = await NotificationSettings.findOneAndUpdate(
+      { userId },
+      { emailEnabled: Boolean(emailEnabled), pushEnabled: Boolean(pushEnabled) },
+      { new: true, upsert: true }
+    );
+
+    res.json({ message: "Settings updated successfully", settings });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to save notification settings" });
+  }
+});
+
+// 3. GET /reminders/process - cron endpoint
+app.get("/reminders/process", async (req, res) => {
+  const cronSecret = req.headers["x-cron-secret"];
+  
+  if (!process.env.CRON_SECRET || cronSecret !== process.env.CRON_SECRET) {
+    return res.status(403).json({ error: "Forbidden: Invalid cron secret header" });
+  }
+
+  try {
+    const results = await processReminderQueues();
+    res.json({ status: "success", summary: results });
+  } catch (err) {
+    console.error("Cron reminders processing failed:", err);
+    res.status(500).json({ error: "Reminders process execution failed", message: err.message });
+  }
+});
+
 // ================= AI CHAT HELPERS =================
 
 const AI_ACTION_TYPES = [
