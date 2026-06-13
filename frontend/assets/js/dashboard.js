@@ -222,6 +222,125 @@ async function cacheTasksForReminders() {
     }
 }
 
+function updateFocusGarden(stats) {
+    const gardenCard = document.querySelector(".focus-garden");
+    if (!gardenCard) return;
+
+    const total = Number(stats.totalTasks ?? 0);
+    const completed = Number(stats.completedTasks ?? 0);
+    
+    // Calculate completion rate
+    const completionRate = total ? Math.round((completed / total) * 100) : 0;
+
+    // Growth stages mapping
+    let stageClass = "stage-0";
+    let stageTitle = "Seed";
+    let stageDesc = "Create and complete tasks to sprout your seed!";
+
+    if (total === 0) {
+        stageClass = "stage-0";
+        stageTitle = "Seed";
+        stageDesc = "Create and complete tasks to sprout your seed!";
+    } else if (completionRate >= 100) {
+        stageClass = "stage-100";
+        stageTitle = "Full Tree With Flowers";
+        stageDesc = "Spectacular! Your garden has bloomed beautifully!";
+    } else if (completionRate >= 80) {
+        stageClass = "stage-80";
+        stageTitle = "Leaves";
+        stageDesc = "Your tree is lush and full of vibrant green leaves!";
+    } else if (completionRate >= 60) {
+        stageClass = "stage-60";
+        stageTitle = "Tree Structure";
+        stageDesc = "The branches are growing stronger, creating a great tree structure.";
+    } else if (completionRate >= 40) {
+        stageClass = "stage-40";
+        stageTitle = "Small Branches";
+        stageDesc = "Look! Small branches are beginning to grow outward.";
+    } else if (completionRate >= 20) {
+        stageClass = "stage-20";
+        stageTitle = "Stem";
+        stageDesc = "Your seed has sprouted a stem. Keep up the good work!";
+    }
+
+    // Update classes on garden card
+    gardenCard.className = `dashboard-section focus-garden ${stageClass}`;
+
+    // Update text content and progress bar
+    const titleEl = document.getElementById("gardenStageTitle");
+    const descEl = document.getElementById("gardenStageDesc");
+    const barEl = document.getElementById("gardenProgressBar");
+    const textEl = document.getElementById("gardenProgressText");
+
+    if (titleEl) titleEl.textContent = stageTitle;
+    if (descEl) descEl.textContent = stageDesc;
+    if (barEl) barEl.style.width = `${completionRate}%`;
+    if (textEl) textEl.textContent = `${completed} / ${total} Tasks Completed (${completionRate}% Growth)`;
+
+    // Rewards System (stored in localStorage under key 'focus_garden_rewards_<user>')
+    let userKey = "guest";
+    try {
+        if (typeof loadUserProfile === "function") {
+            const profile = loadUserProfile();
+            if (profile && profile.email) {
+                userKey = profile.email;
+            }
+        }
+    } catch (e) {
+        console.warn("Could not retrieve user profile for garden rewards:", e);
+    }
+
+    const storageKey = `focus_garden_rewards_${userKey}`;
+    let rewards = { coins: 0, xp: 0, streak: 0, lastAwardedCompletedCount: 0 };
+    try {
+        const stored = localStorage.getItem(storageKey);
+        if (stored) {
+            rewards = JSON.parse(stored);
+        }
+    } catch (e) {
+        console.warn("Failed to parse focus garden rewards from localStorage:", e);
+    }
+
+    // Default reward properties check (handling incomplete formats)
+    rewards.coins = Number(rewards.coins ?? 0);
+    rewards.xp = Number(rewards.xp ?? 0);
+    rewards.streak = Number(rewards.streak ?? 0);
+    rewards.lastAwardedCompletedCount = Number(rewards.lastAwardedCompletedCount ?? 0);
+
+    const rewardsEl = document.getElementById("gardenRewards");
+
+    if (completionRate === 100 && total > 0) {
+        // Grant rewards only if completed task count exceeds the last rewarded count
+        if (completed > rewards.lastAwardedCompletedCount) {
+            rewards.coins += 100;
+            rewards.xp += 25;
+            rewards.streak += 1;
+            rewards.lastAwardedCompletedCount = completed;
+            localStorage.setItem(storageKey, JSON.stringify(rewards));
+            
+            if (typeof showToast === "function") {
+                showToast("🎉 Tree Fully Grown! +100 Coins, +25 XP, Streak +1", 5000, "success");
+            }
+        }
+        if (rewardsEl) {
+            rewardsEl.classList.remove("hidden");
+        }
+    } else {
+        if (rewardsEl) {
+            rewardsEl.classList.add("hidden");
+        }
+    }
+
+    // Render floating balance badges inside the card
+    const coinsEl = document.getElementById("gardenTotalCoins");
+    const xpEl = document.getElementById("gardenTotalXp");
+    const streakEl = document.getElementById("gardenTotalStreak");
+
+    if (coinsEl) coinsEl.textContent = rewards.coins;
+    if (xpEl) xpEl.textContent = `${rewards.xp} XP`;
+    if (streakEl) streakEl.textContent = rewards.streak;
+}
+
 async function fetchDashboardData() {
     if (dashboardFetchStarted) return;
 
@@ -243,6 +362,9 @@ async function fetchDashboardData() {
         renderRecentTasks(normalized.recentTasks);
         renderInsights(normalized.insights);
 
+        // Update the Focus Garden visualization
+        updateFocusGarden(normalized.stats);
+
         cacheTasksForReminders();
     } catch (err) {
         console.error("Dashboard fetch error:", err);
@@ -259,6 +381,9 @@ async function fetchDashboardData() {
         );
         renderRecentTasks([], "Unable to load recent tasks");
         insightsSection?.classList.add("hidden");
+
+        // Clear/reset Focus Garden on error
+        updateFocusGarden({ totalTasks: 0, completedTasks: 0, pendingTasks: 0, completionRate: 0 });
 
         if (msg !== "Unauthorized") {
             showToast(msg, 4000, "error");
@@ -284,5 +409,9 @@ window.onAuthStateChanged = (loggedIn) => {
         renderRecentTasksSkeleton();
         if (dashboardWelcome) dashboardWelcome.textContent = "Welcome back 👋";
         insightsSection?.classList.add("hidden");
+
+        // Reset Focus Garden visual state when user logs out
+        updateFocusGarden({ totalTasks: 0, completedTasks: 0, pendingTasks: 0, completionRate: 0 });
     }
 };
+

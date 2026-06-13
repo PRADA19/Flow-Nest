@@ -127,6 +127,115 @@
                         <div class="stats-grid" id="statsGrid" aria-live="polite"></div>
                     </section>
 
+                    <!-- Focus Garden Section -->
+                    <section class="dashboard-section focus-garden stage-0" aria-labelledby="gardenHeading">
+                        <h3 class="dashboard-section-title" id="gardenHeading">
+                            <i class="ph-fill ph-plant"></i> Focus Garden
+                        </h3>
+                        <div class="garden-card">
+                            <!-- Floating status badges loaded from localStorage -->
+                            <div class="garden-header-stats">
+                                <span class="garden-stat-badge" title="Coins"><i class="ph-fill ph-coins"></i> <span id="gardenTotalCoins">0</span></span>
+                                <span class="garden-stat-badge" title="XP"><i class="ph-fill ph-lightning"></i> <span id="gardenTotalXp">0 XP</span></span>
+                                <span class="garden-stat-badge" title="Streak"><i class="ph-fill ph-fire"></i> <span id="gardenTotalStreak">0</span></span>
+                            </div>
+
+                            <!-- Centered Tree SVG Graphic -->
+                            <div class="garden-tree-container">
+                                <svg id="gardenTreeSvg" viewBox="0 0 200 200" width="100%" height="100%">
+                                    <!-- Ground & Soil -->
+                                    <ellipse cx="100" cy="180" rx="55" ry="8" fill="#e2e8f0" opacity="0.3" class="garden-ground" />
+                                    <ellipse cx="100" cy="180" rx="24" ry="5" fill="#78350f" opacity="0.85" class="garden-soil" />
+                                    
+                                    <!-- Stage 0: Seed -->
+                                    <circle cx="100" cy="177" r="4.5" fill="#b45309" class="garden-seed" />
+                                    
+                                    <!-- Stage 20: Trunk/Stem -->
+                                    <path d="M 100,180 L 100,80" fill="none" stroke="#78350F" stroke-width="8" stroke-linecap="round" class="garden-trunk" />
+                                    
+                                    <!-- Stage 40 & 60: Branches -->
+                                    <!-- Lower branches (Stage 40) -->
+                                    <path d="M 100,140 Q 82,125 78,118" fill="none" stroke="#78350F" stroke-width="5" stroke-linecap="round" class="garden-branch branch-left-low" />
+                                    <path d="M 100,132 Q 118,118 122,112" fill="none" stroke="#78350F" stroke-width="5" stroke-linecap="round" class="garden-branch branch-right-low" />
+                                    
+                                    <!-- Upper branches (Stage 60) -->
+                                    <path d="M 100,105 Q 82,85 70,82" fill="none" stroke="#78350F" stroke-width="4" stroke-linecap="round" class="garden-branch branch-left-high" />
+                                    <path d="M 100,95 Q 118,75 125,70" fill="none" stroke="#78350F" stroke-width="3.5" stroke-linecap="round" class="garden-branch branch-right-high" />
+                                    
+                                    <!-- Stage 80: Leaves -->
+                                    <g class="garden-leaves">
+                                        <!-- Main trunk top leaves -->
+                                        <path d="M 100,80 Q 90,70 100,60 Q 110,70 100,80 Z" fill="#10B981" />
+                                        <!-- Left low branch leaves -->
+                                        <path d="M 78,118 Q 66,118 70,108 Q 82,108 78,118 Z" fill="#10B981" />
+                                        <path d="M 78,118 Q 70,128 78,128 Q 82,118 78,118 Z" fill="#059669" />
+                                        <!-- Right low branch leaves -->
+                                        <path d="M 122,112 Q 134,112 130,102 Q 118,102 122,112 Z" fill="#10B981" />
+                                        <path d="M 122,112 Q 130,122 122,122 Q 118,112 122,112 Z" fill="#059669" />
+                                        <!-- Left high branch leaves -->
+                                        <path d="M 70,82 Q 58,82 62,72 Q 74,72 70,82 Z" fill="#10B981" />
+                                        <path d="M 70,82 Q 62,92 70,92 Q 74,82 70,82 Z" fill="#059669" />
+                                        <!-- Right high branch leaves -->
+                                        <path d="M 125,70 Q 137,70 133,60 Q 121,60 125,70 Z" fill="#10B981" />
+                                        <path d="M 125,70 Q 121,80 129,80 Q 125,70 125,70 Z" fill="#059669" />
+                                    </g>
+                                    
+                                    <!-- Stage 100: Flowers -->
+                                    <g class="garden-flowers">
+                                        <!-- Top flower -->
+                                        <g transform="translate(100, 60)" class="flower-top">
+                                            <circle cx="0" cy="0" r="2.5" fill="#FBBF24" />
+                                            <circle cx="-4" cy="0" r="3" fill="#EC4899" opacity="0.85" />
+                                            <circle cx="4" cy="0" r="3" fill="#EC4899" opacity="0.85" />
+                                            <circle cx="0" cy="-4" r="3" fill="#EC4899" opacity="0.85" />
+                                            <circle cx="0" cy="4" r="3" fill="#EC4899" opacity="0.85" />
+                                        </g>
+                                        <!-- Left low flower -->
+                                        <g transform="translate(70, 108)" class="flower-left-low">
+                                            <circle cx="0" cy="0" r="2" fill="#FBBF24" />
+                                            <circle cx="-3" cy="0" r="2.5" fill="#EC4899" opacity="0.85" />
+                                            <circle cx="3" cy="0" r="2.5" fill="#EC4899" opacity="0.85" />
+                                            <circle cx="0" cy="-3" r="2.5" fill="#EC4899" opacity="0.85" />
+                                            <circle cx="0" cy="3" r="2.5" fill="#EC4899" opacity="0.85" />
+                                        </g>
+                                        <!-- Right high flower -->
+                                        <g transform="translate(133, 60)" class="flower-right-high">
+                                            <circle cx="0" cy="0" r="2" fill="#FBBF24" />
+                                            <circle cx="-3" cy="0" r="2.5" fill="#EC4899" opacity="0.85" />
+                                            <circle cx="3" cy="0" r="2.5" fill="#EC4899" opacity="0.85" />
+                                            <circle cx="0" cy="-3" r="2.5" fill="#EC4899" opacity="0.85" />
+                                            <circle cx="0" cy="3" r="2.5" fill="#EC4899" opacity="0.85" />
+                                        </g>
+                                    </g>
+                                </svg>
+                            </div>
+
+                            <!-- Growth Info and Progress details -->
+                            <div class="garden-info">
+                                <h4 class="garden-stage-title" id="gardenStageTitle">Seed</h4>
+                                <p class="garden-stage-desc" id="gardenStageDesc">Create and complete tasks to sprout your seed!</p>
+                                <div class="garden-progress-bar-container">
+                                    <div class="garden-progress-bar" id="gardenProgressBar"></div>
+                                </div>
+                                <div class="garden-stats">
+                                    <span id="gardenProgressText">0% Complete (0/0 Tasks)</span>
+                                </div>
+                            </div>
+
+                            <!-- 100% Rewards System Card -->
+                            <div class="garden-rewards hidden" id="gardenRewards">
+                                <div class="rewards-title">🎉 Tree Fully Grown</div>
+                                <div class="rewards-items">
+                                    <div class="reward-item"><i class="ph-bold ph-coins"></i> +100 Coins</div>
+                                    <div class="reward-item"><i class="ph-bold ph-lightning"></i> +25 XP</div>
+                                    <div class="reward-item"><i class="ph-bold ph-fire"></i> Streak +1</div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Hidden dashboard sections kept for logic stability -->
+                    <!--
                     <section class="dashboard-section" aria-labelledby="actionsHeading">
                         <h3 class="dashboard-section-title" id="actionsHeading">
                             <i class="ph-fill ph-lightning"></i> Quick Actions
@@ -150,6 +259,7 @@
                         </h3>
                         <div class="recent-tasks-list" id="recentTasksList" aria-live="polite"></div>
                     </section>
+                    -->
 
                     <section class="dashboard-section hidden" id="insightsSection" aria-labelledby="insightsHeading">
                         <h3 class="dashboard-section-title" id="insightsHeading">

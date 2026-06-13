@@ -79,16 +79,22 @@ addOrigin(process.env.FRONTEND_URL);
 addOrigin(process.env.CLIENT_URL);
 addOrigin(process.env.ALLOWED_ORIGINS);
 
-if (allowedOrigins.length === 0) {
-  allowedOrigins.push(
-    "http://localhost:5500",
-    "http://127.0.0.1:5500",
-    "http://localhost:3456",
-    "http://127.0.0.1:3456",
-    "http://localhost:3000",
-    "http://127.0.0.1:3000"
-  );
-}
+// Always allow local development origins alongside production allowed origins
+const localOrigins = [
+  "http://localhost:5500",
+  "http://127.0.0.1:5500",
+  "http://localhost:5501",
+  "http://127.0.0.1:5501",
+  "http://localhost:3456",
+  "http://127.0.0.1:3456",
+  "http://localhost:3000",
+  "http://127.0.0.1:3000"
+];
+localOrigins.forEach(origin => {
+  if (!allowedOrigins.includes(origin)) {
+    allowedOrigins.push(origin);
+  }
+});
 
 const isLocalDevOrigin = (origin) =>
   /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
