@@ -24,7 +24,12 @@ const logSecurityEvent = (eventType, details) => {
   const timestamp = new Date().toISOString();
   const logEntry = `[${timestamp}] [${eventType.toUpperCase()}] ${JSON.stringify(details)}\n`;
   
-  // Secure append-only logs on disk
+  if (process.env.NODE_ENV === "production") {
+    console.log(`[AUDIT_LOG] ${logEntry.trim()}`);
+    return;
+  }
+
+  // Secure append-only logs on disk in development
   fs.appendFile(AUDIT_LOG_FILE, logEntry, (err) => {
     if (err) console.error("🚨 [FAILSAFE FAILURE] Failed to write to audit log:", err);
   });

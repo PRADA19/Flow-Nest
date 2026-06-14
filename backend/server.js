@@ -677,8 +677,8 @@ app.post(
 );
 
 // LOGOUT
-app.post("/auth/logout", (req, res) => {
-  blacklistToken(extractToken(req));
+app.post("/auth/logout", async (req, res) => {
+  await blacklistToken(extractToken(req));
 
   res.clearCookie("smarttodo_token", {
     httpOnly: true,

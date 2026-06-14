@@ -1,7 +1,7 @@
 const jwt = require("jsonwebtoken");
 const { isTokenBlacklisted } = require("./tokenBlacklist");
 
-const authenticateUser = (req, res, next) => {
+const authenticateUser = async (req, res, next) => {
   try {
     // 1. Extract token from cookie (signed or unsigned) or Authorization header fallback
     let token = req.cookies?.smarttodo_token || req.signedCookies?.smarttodo_token;
@@ -17,7 +17,7 @@ const authenticateUser = (req, res, next) => {
       return res.status(401).json({ error: "Access denied. Please log in to proceed." });
     }
 
-    if (isTokenBlacklisted(token)) {
+    if (await isTokenBlacklisted(token)) {
       return res.status(401).json({ error: "Your session has expired. Please log in again." });
     }
 
