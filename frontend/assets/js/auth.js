@@ -10,6 +10,8 @@ function updateAuthModeUI() {
     const authSwitchLink = document.getElementById("authSwitchLink");
     const authSubmitBtn = document.getElementById("authSubmitBtn");
     const authName = document.getElementById("authName");
+    const authPassword = document.getElementById("authPassword");
+    const forgotPasswordBtn = document.getElementById("forgotPasswordBtn");
 
     if (!authTitle) return;
 
@@ -20,13 +22,35 @@ function updateAuthModeUI() {
         authSubmitBtn.textContent = "Login";
         authName.classList.add("hidden");
         authName.removeAttribute("required");
-    } else {
+        if (authPassword) {
+            authPassword.classList.remove("hidden");
+            authPassword.setAttribute("required", "");
+        }
+        if (forgotPasswordBtn) forgotPasswordBtn.classList.remove("hidden");
+    } else if (authMode === "register") {
         authTitle.textContent = "Create Account";
         authSwitchText.textContent = "Already have an account?";
         authSwitchLink.textContent = "Login here";
         authSubmitBtn.textContent = "Register";
         authName.classList.remove("hidden");
         authName.setAttribute("required", "");
+        if (authPassword) {
+            authPassword.classList.remove("hidden");
+            authPassword.setAttribute("required", "");
+        }
+        if (forgotPasswordBtn) forgotPasswordBtn.classList.add("hidden");
+    } else if (authMode === "forgot-password") {
+        authTitle.textContent = "Reset Password";
+        authSwitchText.textContent = "Remember your password?";
+        authSwitchLink.textContent = "Login here";
+        authSubmitBtn.textContent = "Send Reset Link";
+        authName.classList.add("hidden");
+        authName.removeAttribute("required");
+        if (authPassword) {
+            authPassword.classList.add("hidden");
+            authPassword.removeAttribute("required");
+        }
+        if (forgotPasswordBtn) forgotPasswordBtn.classList.add("hidden");
     }
 }
 
@@ -74,18 +98,32 @@ function initAuth() {
     const authSwitchLink = document.getElementById("authSwitchLink");
     const logoutBtn = document.getElementById("logoutBtn");
     const openAuthBtn = document.getElementById("openAuthBtn");
+    const forgotPasswordBtn = document.getElementById("forgotPasswordBtn");
     
     updateAuthModeUI();
 
     openAuthBtn?.addEventListener("click", (e) => {
         e.preventDefault();
+        // Reset auth mode back to login when modal opens
+        authMode = "login";
+        updateAuthModeUI();
         document.getElementById("authModal")?.classList.remove("hidden");
         document.getElementById("authBanner")?.classList.add("hidden");
     });
 
     authSwitchLink?.addEventListener("click", (e) => {
         e.preventDefault();
-        authMode = authMode === "login" ? "register" : "login";
+        if (authMode === "forgot-password") {
+            authMode = "login";
+        } else {
+            authMode = authMode === "login" ? "register" : "login";
+        }
+        updateAuthModeUI();
+    });
+
+    forgotPasswordBtn?.addEventListener("click", (e) => {
+        e.preventDefault();
+        authMode = "forgot-password";
         updateAuthModeUI();
     });
 
@@ -93,22 +131,32 @@ function initAuth() {
         e.preventDefault();
         
         const email = document.getElementById("authEmail").value.trim();
-        const password = document.getElementById("authPassword").value.trim();
+        const password = authMode === "forgot-password" ? "" : document.getElementById("authPassword").value.trim();
         const name = document.getElementById("authName")?.value.trim();
 
-        if (!email || !password || (authMode === "register" && !name)) {
+        if (!email || (authMode !== "forgot-password" && !password) || (authMode === "register" && !name)) {
             showToast("Please fill in all required fields.");
             return;
         }
 
-        const endpoint = authMode === "login" ? CONFIG.ENDPOINTS.LOGIN : CONFIG.ENDPOINTS.REGISTER;
-        const payload = { email, password };
-        if (authMode === "register") payload.name = name;
+        let endpoint = "";
+        let payload = { email };
+
+        if (authMode === "login") {
+            endpoint = CONFIG.ENDPOINTS.LOGIN;
+            payload.password = password;
+        } else if (authMode === "register") {
+            endpoint = CONFIG.ENDPOINTS.REGISTER;
+            payload.password = password;
+            payload.name = name;
+        } else if (authMode === "forgot-password") {
+            endpoint = "/auth/forgot-password";
+        }
 
         setAuthSubmitting(true);
         
         try {
-            // Un-authenticated request wrapper bypass for login/register
+            // Send payload to backend API (using the resolve base URL helper)
             const response = await fetch(apiUrl(endpoint), {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -147,10 +195,20 @@ function initAuth() {
                 
                 showToast("Logged in successfully.", 2500, "success");
                 setAppState(true);
-            } else {
+            } else if (authMode === "register") {
                 showToast("Registration successful. Please login.", 2500, "success");
                 authMode = "login";
                 updateAuthModeUI();
+            } else if (authMode === "forgot-password") {
+                showToast(data.message || "If an account exists for this email, a reset link has been sent.", 4000, "success");
+                authMode = "login";
+                updateAuthModeUI();
+                
+                // Clear forms
+                document.getElementById("authEmail").value = "";
+                if (document.getElementById("authPassword")) {
+                    document.getElementById("authPassword").value = "";
+                }
             }
         } catch (err) {
             let message = err.message || "Authentication failed.";

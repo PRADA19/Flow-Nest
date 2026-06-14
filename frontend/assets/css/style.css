@@ -1092,6 +1092,24 @@ body.tasks-view-calendar .filter-field--tag {
     text-decoration: underline;
 }
 
+.forgot-pwd-btn {
+    align-self: flex-end;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    margin-top: -5px;
+    transition: color 0.2s ease;
+}
+
+.forgot-pwd-btn:hover {
+    color: var(--shape-1);
+    text-decoration: underline;
+}
+
 .primary-btn {
     background: var(--shape-1);
     color: var(--text-primary);

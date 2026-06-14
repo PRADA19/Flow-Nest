@@ -26,6 +26,10 @@
       "destination": "/pages/games.html"
     },
     {
+      "source": "/reset-password",
+      "destination": "/pages/reset-password.html"
+    },
+    {
       "source": "/",
       "destination": "/pages/index.html"
     }

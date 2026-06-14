@@ -176,6 +176,9 @@ app.use("/api/support", apiLimiter);
 // ================= SUPPORT ROUTES =================
 app.use("/api/support", require("./routes/support"));
 
+// ================= AUTH EXTRA ROUTES =================
+app.use("/api/auth", require("./routes/auth"));
+
 // ================= DATABASE =================
 let isOfflineMode = false;
 let isDatabaseUnavailable = false;
