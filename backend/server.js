@@ -227,6 +227,7 @@ const scheduleBackgroundReconnect = (initialInterval = 5000, maxInterval = 60000
         if (mongoUri) {
           await mongoose.connect(mongoUri, {
             serverSelectionTimeoutMS: 30000,
+            maxPoolSize: 15,
           });
           isDatabaseUnavailable = false;
           isOfflineMode = false;
@@ -265,6 +266,7 @@ const connectDB = async (retries = 5, initialDelay = 2000) => {
     try {
       await mongoose.connect(mongoUri, {
         serverSelectionTimeoutMS: 30000,
+        maxPoolSize: 15,
       });
       return;
     } catch (err) {

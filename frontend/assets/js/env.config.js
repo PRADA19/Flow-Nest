@@ -4,5 +4,5 @@
  * Leave empty to use auto-detection in config.js (localhost:5003 in dev, /api proxy in prod).
  */
 window.__SMARTTODO_CONFIG__ = {
-    API_BASE: "https://flow-nest-2.onrender.com/api"
+    // API_BASE: "https://flow-nest-2.onrender.com/api"
 };

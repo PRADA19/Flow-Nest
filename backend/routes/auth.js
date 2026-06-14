@@ -132,7 +132,7 @@ router.post("/forgot-password", authLimiter, async (req, res) => {
  * @desc    Validate token and update user password
  * @access  Public
  */
-router.post("/reset-password", async (req, res) => {
+router.post("/reset-password", authLimiter, async (req, res) => {
   try {
     const { token, password } = req.body;
 
