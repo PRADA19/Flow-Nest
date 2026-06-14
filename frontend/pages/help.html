@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Help Center — Flow Nest</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="../assets/css/help.css">
+</head>
+<body>
+
+    <div class="bg-shape shape-1" aria-hidden="true"></div>
+    <div class="bg-shape shape-2" aria-hidden="true"></div>
+    <div class="bg-shape shape-3" aria-hidden="true"></div>
+
+    <div class="app-layout">
+
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar" id="sidebar" aria-label="Main navigation">
+            <div class="sidebar-top">
+                <div class="sidebar-logo">
+                    <div class="sidebar-logo-icon">
+                        <i class="ph-fill ph-check-square-offset"></i>
+                    </div>
+                    <div class="sidebar-logo-text">
+                        <h2>Flow Nest</h2>
+                        <p>Productivity App</p>
+                    </div>
+                </div>
+                <button type="button" class="sidebar-close-btn" id="sidebarCloseBtn" aria-label="Close sidebar">
+                    <i class="ph-bold ph-x"></i>
+                </button>
+            </div>
+
+            <nav class="sidebar-nav" aria-label="App sections">
+                <a href="dashboard.html" class="sidebar-link sidebar-link--nav">
+                    <i class="ph-fill ph-house"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="index.html" class="sidebar-link sidebar-link--nav">
+                    <i class="ph-fill ph-check-circle"></i>
+                    <span>Tasks</span>
+                </a>
+                <a href="index.html?view=calendar" class="sidebar-link sidebar-link--nav">
+                    <i class="ph-fill ph-calendar"></i>
+                    <span>Calendar</span>
+                </a>
+                <a href="analytics.html" class="sidebar-link sidebar-link--nav">
+                    <i class="ph-fill ph-chart-line-up"></i>
+                    <span>Analytics</span>
+                </a>
+                <a href="assistant.html" class="sidebar-link sidebar-link--nav">
+                    <i class="ph-fill ph-robot"></i>
+                    <span>AI Assistant</span>
+                </a>
+                <a href="help.html" class="sidebar-link sidebar-link--nav active">
+                    <i class="ph-fill ph-question"></i>
+                    <span>Help Center</span>
+                </a>
+                <a href="settings.html" class="sidebar-link sidebar-link--nav">
+                    <i class="ph-fill ph-gear"></i>
+                    <span>Settings</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-bottom">
+                <div class="sidebar-user-card">
+                    <div class="user-avatar">
+                        <i class="ph-fill ph-user"></i>
+                    </div>
+                    <div class="user-info">
+                        <span class="user-name" id="sidebarUserName">Guest</span>
+                        <span class="sidebar-level-tag hidden" id="sidebarLevelTag">Lvl 1 Novice</span>
+                    </div>
+                </div>
+                <div class="sidebar-xp-container hidden" id="sidebarXpContainer">
+                    <div class="sidebar-xp-bar-wrapper">
+                        <div class="sidebar-xp-bar" id="sidebarXpBar" style="width: 0%;"></div>
+                    </div>
+                    <span class="sidebar-xp-text" id="sidebarXpText">0 / 100 XP</span>
+                </div>
+            </div>
+        </aside>
+
+        <div class="sidebar-overlay hidden" id="sidebarOverlay" aria-hidden="true"></div>
+
+        <!-- Main Workspace Area -->
+        <div class="app-main">
+            <header class="app-header app-header--toolbar">
+                <div class="header-content">
+                    <div class="icon-container">
+                        <i class="ph-fill ph-question"></i>
+                    </div>
+                    <div class="header-text">
+                        <h1>Help Center</h1>
+                        <p class="tagline">Explore features, get answers, and submit requests.</p>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <button type="button" id="sidebarToggleBtn" class="action-btn header-icon-btn" aria-label="Open sidebar">
+                        <i class="ph-bold ph-list"></i>
+                    </button>
+                    <button type="button" id="notificationBtn" class="action-btn header-icon-btn" aria-label="Open notifications" onclick="toggleNotificationDropdown()">
+                        <i class="ph-bold ph-bell"></i>
+                        <span class="notification-badge hidden" id="notificationBadge">0</span>
+                    </button>
+                    <button type="button" id="logoutBtn" class="action-btn header-icon-btn hidden" aria-label="Logout">
+                        <i class="ph-bold ph-sign-out"></i>
+                    </button>
+                    <button type="button" id="themeToggleBtn" class="action-btn header-icon-btn" aria-label="Toggle dark mode">
+                        <i class="ph-bold ph-moon"></i>
+                    </button>
+                </div>
+                <div id="notificationDropdown" class="notifications-dropdown hidden" aria-live="polite" aria-label="Notifications panel"></div>
+            </header>
+
+            <main class="main-content" id="mainContent">
+                <div class="container help-container">
+
+                    <!-- Search Bar Section -->
+                    <section class="search-section" aria-labelledby="searchHeading">
+                        <h2 id="searchHeading" class="sr-only">Search help topics</h2>
+                        <div class="search-box">
+                            <i class="ph-bold ph-magnifying-glass search-icon"></i>
+                            <input type="text" id="helpSearchInput" class="search-input" placeholder="Search questions, keywords, or topics..." aria-label="Search help topics">
+                        </div>
+                    </section>
+
+                    <!-- Feature Navigation Grid -->
+                    <section class="feature-cards-grid" aria-label="Feature quick links">
+                        <button class="feature-card-btn active" data-category="all">
+                            <div class="feature-card-icon"><i class="ph-bold ph-squares-four"></i></div>
+                            <span>All Topics</span>
+                        </button>
+                        <button class="feature-card-btn" data-category="getting-started">
+                            <div class="feature-card-icon"><i class="ph-bold ph-rocket-launch"></i></div>
+                            <span>Getting Started</span>
+                        </button>
+                        <button class="feature-card-btn" data-category="focus-tree">
+                            <div class="feature-card-icon"><i class="ph-bold ph-tree"></i></div>
+                            <span>Focus Tree</span>
+                        </button>
+                        <button class="feature-card-btn" data-category="xp-levels">
+                            <div class="feature-card-icon"><i class="ph-bold ph-sparkles"></i></div>
+                            <span>XP & Levels</span>
+                        </button>
+                        <button class="feature-card-btn" data-category="reminders">
+                            <div class="feature-card-icon"><i class="ph-bold ph-bell"></i></div>
+                            <span>Reminders</span>
+                        </button>
+                        <button class="feature-card-btn" data-category="analytics">
+                            <div class="feature-card-icon"><i class="ph-bold ph-chart-bar"></i></div>
+                            <span>Analytics</span>
+                        </button>
+                        <button class="feature-card-btn" data-category="ai-assistant">
+                            <div class="feature-card-icon"><i class="ph-bold ph-robot"></i></div>
+                            <span>AI Assistant</span>
+                        </button>
+                        <button class="feature-card-btn" data-category="profile">
+                            <div class="feature-card-icon"><i class="ph-bold ph-user-circle"></i></div>
+                            <span>Profile & Setup</span>
+                        </button>
+                    </section>
+
+                    <!-- Accordion FAQs Section -->
+                    <section class="faq-section" aria-labelledby="faqHeading">
+                        <h2 id="faqHeading">Frequently Asked Questions</h2>
+                        <div class="faq-list" id="faqList">
+
+                            <!-- Getting Started -->
+                            <div class="faq-item" data-category="getting-started">
+                                <button class="faq-trigger" aria-expanded="false">
+                                    <span>How do I create my first task in FlowNest?</span>
+                                    <i class="ph-bold ph-caret-down chevron"></i>
+                                </button>
+                                <div class="faq-content" role="region" aria-hidden="true">
+                                    <p>To create your first task, navigate to the <strong>Tasks</strong> tab in the sidebar. Click the input field at the top, enter a title, choose a priority level (High, Medium, Low), add optional tags, set a due date, and hit <strong>Enter</strong> or click the plus button. Your task will appear instantly in the pending list.</p>
+                                </div>
+                            </div>
+
+                            <div class="faq-item" data-category="getting-started">
+                                <button class="faq-trigger" aria-expanded="false">
+                                    <span>How does the Calendar View sync with my tasks?</span>
+                                    <i class="ph-bold ph-caret-down chevron"></i>
+                                </button>
+                                <div class="faq-content" role="region" aria-hidden="true">
+                                    <p>The Calendar View (accessible via <strong>Calendar</strong> in the sidebar or view toggles) automatically pulls all tasks that have a <code>dueDate</code> configured. You can inspect tasks directly on their respective calendar blocks, making it easy to see upcoming deadlines at a glance.</p>
+                                </div>
+                            </div>
+
+                            <div class="faq-item" data-category="getting-started">
+                                <button class="faq-trigger" aria-expanded="false">
+                                    <span>Can I edit or delete tasks after creating them?</span>
+                                    <i class="ph-bold ph-caret-down chevron"></i>
+                                </button>
+                                <div class="faq-content" role="region" aria-hidden="true">
+                                    <p>Yes, absolutely. Hover over any task in your task list to expose control buttons. Click the edit icon to change the task's title, priority, tags, or due date. To delete a task, click the trash icon. Completed tasks can also be deleted directly from the history panel.</p>
+                                </div>
+                            </div>
+
+                            <!-- Focus Tree -->
+                            <div class="faq-item" data-category="focus-tree">
+                                <button class="faq-trigger" aria-expanded="false">
+                                    <span>What is the Focus Tree and how do I grow it?</span>
+                                    <i class="ph-bold ph-caret-down chevron"></i>
+                                </button>
+                                <div class="faq-content" role="region" aria-hidden="true">
+                                    <p>The Focus Tree (visible on the **Dashboard**) is a visual representation of your daily productivity. Completing tasks in your backlog fills your growth progress bar. As your completion rate rises, the tree grows through six visual stages: Seed, Stem, Small Branches, Tree Structure, Leaves, and full Flower Bloom.</p>
+                                </div>
+                            </div>
+
+                            <div class="faq-item" data-category="focus-tree">
+                                <button class="faq-trigger" aria-expanded="false">
+                                    <span>What happens when my Focus Tree is fully grown?</span>
+                                    <i class="ph-bold ph-caret-down chevron"></i>
+                                </button>
+                                <div class="faq-content" role="region" aria-hidden="true">
+                                    <p>When you achieve 100% task completion, your Focus Tree reaches full bloom. This rewards you with <strong>+100 Coins</strong>, <strong>+25 XP</strong>, and increments your **Daily Streak** by 1. A success banner will display at the bottom of the card to celebrate your momentum.</p>
+                                </div>
+                            </div>
+
+                            <div class="faq-item" data-category="focus-tree">
+                                <button class="faq-trigger" aria-expanded="false">
+                                    <span>Why did my Focus Tree progress reset?</span>
+                                    <i class="ph-bold ph-caret-down chevron"></i>
+                                </button>
+                                <div class="faq-content" role="region" aria-hidden="true">
+                                    <p>The tree progress is derived from the ratio of completed-to-pending tasks. If you add new tasks to your queue, the percentage of completed tasks will drop, causing the tree to change back to an earlier stage. Complete these new tasks to regrow your tree to full bloom!</p>
+                                </div>
+                            </div>
+
+                            <!-- XP & Levels -->
+                            <div class="faq-item" data-category="xp-levels">
+                                <button class="faq-trigger" aria-expanded="false">
+                                    <span>How do I earn XP and level up?</span>
+                                    <i class="ph-bold ph-caret-down chevron"></i>
+                                </button>
+                                <div class="faq-content" role="region" aria-hidden="true">
+                                    <p>XP (Experience Points) are earned by completing tasks (High priority grants more XP than Low priority) and achieving a full Focus Tree bloom. Once your XP bar hits 100 points, you automatically level up and unlock a new title badge displayed on your sidebar user card.</p>
+                                </div>
+                            </div>
+
+                            <div class="faq-item" data-category="xp-levels">
+                                <button class="faq-trigger" aria-expanded="false">
+                                    <span>What are Daily Streaks and how do I maintain them?</span>
+                                    <i class="ph-bold ph-caret-down chevron"></i>
+                                </button>
+                                <div class="faq-content" role="region" aria-hidden="true">
+                                    <p>Daily Streaks represent your consistency. You maintain and increment your streak by completing at least one task or achieving a Focus Tree bloom every calendar day. If a full day passes without any task completion activity, your streak resets back to 0.</p>
+                                </div>
+                            </div>
+
+                            <!-- Reminders -->
+                            <div class="faq-item" data-category="reminders">
+                                <button class="faq-trigger" aria-expanded="false">
+                                    <span>How do I configure email or push reminders?</span>
+                                    <i class="ph-bold ph-caret-down chevron"></i>
+                                </button>
+                                <div class="faq-content" role="region" aria-hidden="true">
+                                    <p>Navigate to the <strong>Settings</strong> page. Under the **Notifications** card, you will find toggles for In-App / Browser Reminders, Email Notifications, and Push Notifications. Enabling these switches immediately syncs your preferences with the database.</p>
+                                </div>
+                            </div>
+
+                            <div class="faq-item" data-category="reminders">
+                                <button class="faq-trigger" aria-expanded="false">
+                                    <span>I am not receiving reminder emails. How do I fix this?</span>
+                                    <i class="ph-bold ph-caret-down chevron"></i>
+                                </button>
+                                <div class="faq-content" role="region" aria-hidden="true">
+                                    <p>First, verify that **Email Notifications** is toggled ON in your Settings tab. Second, make sure your task has a valid `dueDate` configured. Reminders are dispatched strictly at offsets: 3 days, 2 days, 1 day, 3 hours, and 1 hour before due dates. Check your spam folder if configuration is correct.</p>
+                                </div>
+                            </div>
+
+                            <div class="faq-item" data-category="reminders">
+                                <button class="faq-trigger" aria-expanded="false">
+                                    <span>Can I turn off notifications temporarily?</span>
+                                    <i class="ph-bold ph-caret-down chevron"></i>
+                                </button>
+                                <div class="faq-content" role="region" aria-hidden="true">
+                                    <p>Yes. You can toggle off any specific reminder channel (Email, Browser, or Push) on the Settings page. This will immediately stop reminders on those channels while preserving your user session and tasks.</p>
+                                </div>
+                            </div>
+
+                            <!-- Analytics -->
+                            <div class="faq-item" data-category="analytics">
+                                <button class="faq-trigger" aria-expanded="false">
+                                    <span>What metrics are tracked in the Analytics Dashboard?</span>
+                                    <i class="ph-bold ph-caret-down chevron"></i>
+                                </button>
+                                <div class="faq-content" role="region" aria-hidden="true">
+                                    <p>The <strong>Analytics</strong> page tracks your total tasks completed, pending backlog counts, productivity distribution by priority level (High/Medium/Low), task category tagging statistics, and completion rate percentages over time.</p>
+                                </div>
+                            </div>
+
+                            <!-- AI Assistant -->
+                            <div class="faq-item" data-category="ai-assistant">
+                                <button class="faq-trigger" aria-expanded="false">
+                                    <span>How does the AI Assistant help me manage tasks?</span>
+                                    <i class="ph-bold ph-caret-down chevron"></i>
+                                </button>
+                                <div class="faq-content" role="region" aria-hidden="true">
+                                    <p>The <strong>AI Assistant</strong> (powered by Google Gemini) can analyze your schedule and suggest task prioritizations. You can chat with it to break down large projects, schedule tasks automatically, and structure your daily workflow in real-time.</p>
+                                </div>
+                            </div>
+
+                            <!-- Profile & Setup -->
+                            <div class="faq-item" data-category="profile">
+                                <button class="faq-trigger" aria-expanded="false">
+                                    <span>How do I update my name or email in my profile?</span>
+                                    <i class="ph-bold ph-caret-down chevron"></i>
+                                </button>
+                                <div class="faq-content" role="region" aria-hidden="true">
+                                    <p>Profile details are managed on the <strong>Settings</strong> page under the **Profile Details** card. You can modify your display name or email address and click "Save Changes" to commit the updates directly to the database.</p>
+                                </div>
+                            </div>
+
+                            <div class="faq-item" data-category="profile">
+                                <button class="faq-trigger" aria-expanded="false">
+                                    <span>Is my session secure across devices?</span>
+                                    <i class="ph-bold ph-caret-down chevron"></i>
+                                </button>
+                                <div class="faq-content" role="region" aria-hidden="true">
+                                    <p>Yes. FlowNest uses secure JSON Web Tokens (JWT) stored in HTTP-Only signed cookies. When you log out, your token is stored in a database-backed blacklist collection with a TTL index to ensure it is permanently invalidated and cannot be reused.</p>
+                                </div>
+                            </div>
+
+                        </div>
+                    </section>
+
+                    <!-- Contact/Support Callouts Section -->
+                    <section class="support-actions-section" aria-labelledby="supportHeading">
+                        <h2 id="supportHeading">Still need help?</h2>
+                        <p class="support-tagline">If you couldn't find the answers you were looking for, reach out to our team directly.</p>
+                        <div class="support-cards-wrapper">
+                            <div class="support-action-card">
+                                <div class="support-card-icon"><i class="ph-bold ph-envelope"></i></div>
+                                <h3>Contact Support</h3>
+                                <p>Get personalized assistance from our support agents.</p>
+                                <button type="button" class="support-btn" id="openSupportBtn">Submit Ticket</button>
+                            </div>
+                            <div class="support-action-card">
+                                <div class="support-card-icon"><i class="ph-bold ph-bug"></i></div>
+                                <h3>Report a Bug</h3>
+                                <p>Help us improve FlowNest by reporting system glitches.</p>
+                                <button type="button" class="support-btn" id="openBugBtn">Submit Report</button>
+                            </div>
+                            <div class="support-action-card">
+                                <div class="support-card-icon"><i class="ph-bold ph-lightbulb"></i></div>
+                                <h3>Request Feature</h3>
+                                <p>Suggest enhancements or new features for the app.</p>
+                                <button type="button" class="support-btn" id="openFeatureBtn">Submit Idea</button>
+                            </div>
+                        </div>
+                    </section>
+
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Modals Section -->
+    <!-- 1. Support Ticket Modal -->
+    <div class="modal-overlay hidden" id="supportModal" aria-hidden="true" role="dialog" aria-labelledby="supportModalTitle">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 id="supportModalTitle">Contact Support</h3>
+                <button type="button" class="close-modal-btn" aria-label="Close modal"><i class="ph-bold ph-x"></i></button>
+            </div>
+            <form id="supportForm" class="modal-form">
+                <div class="form-group">
+                    <label for="supportSubject">Subject</label>
+                    <input type="text" id="supportSubject" name="supportSubject" required placeholder="What do you need help with?">
+                </div>
+                <div class="form-group">
+                    <label for="supportCategory">Category</label>
+                    <select id="supportCategory" name="supportCategory" required>
+                        <option value="account">Account Access</option>
+                        <option value="billing">Task Sync Issues</option>
+                        <option value="notifications">Reminders & Notifications</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="supportMessage">Message Description</label>
+                    <textarea id="supportMessage" name="supportMessage" rows="5" required placeholder="Detail your issue here..."></textarea>
+                </div>
+                <button type="submit" class="game-btn modal-submit-btn">Submit Ticket</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 2. Bug Report Modal -->
+    <div class="modal-overlay hidden" id="bugModal" aria-hidden="true" role="dialog" aria-labelledby="bugModalTitle">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 id="bugModalTitle">Report a Bug</h3>
+                <button type="button" class="close-modal-btn" aria-label="Close modal"><i class="ph-bold ph-x"></i></button>
+            </div>
+            <form id="bugForm" class="modal-form">
+                <div class="form-group">
+                    <label for="bugTitle">Bug Title</label>
+                    <input type="text" id="bugTitle" name="bugTitle" required placeholder="Brief summary of the issue">
+                </div>
+                <div class="form-group">
+                    <label for="bugSteps">Steps to Reproduce</label>
+                    <textarea id="bugSteps" name="bugSteps" rows="4" required placeholder="1. Go to page X&#10;2. Click on button Y&#10;3. See error Z"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="bugSeverity">Severity Level</label>
+                    <select id="bugSeverity" name="bugSeverity" required>
+                        <option value="low">Low (Cosmetic issue)</option>
+                        <option value="medium" selected>Medium (Feature broken but workaround exists)</option>
+                        <option value="high">High (App blocks, crashes, or data loss)</option>
+                    </select>
+                </div>
+                <button type="submit" class="game-btn modal-submit-btn">Submit Report</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 3. Feature Request Modal -->
+    <div class="modal-overlay hidden" id="featureModal" aria-hidden="true" role="dialog" aria-labelledby="featureModalTitle">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 id="featureModalTitle">Request a Feature</h3>
+                <button type="button" class="close-modal-btn" aria-label="Close modal"><i class="ph-bold ph-x"></i></button>
+            </div>
+            <form id="featureForm" class="modal-form">
+                <div class="form-group">
+                    <label for="featureTitle">Feature Idea Title</label>
+                    <input type="text" id="featureTitle" name="featureTitle" required placeholder="What feature would you like to see?">
+                </div>
+                <div class="form-group">
+                    <label for="featureDesc">Detailed Description</label>
+                    <textarea id="featureDesc" name="featureDesc" rows="5" required placeholder="Explain what the feature does and why it's useful..."></textarea>
+                </div>
+                <button type="submit" class="game-btn modal-submit-btn">Submit Idea</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast" class="toast" aria-live="polite">Ticket saved successfully!</div>
+
+    <script src="../assets/js/utils.js"></script>
+    <script src="../assets/js/notifications.js"></script>
+    <script src="../assets/js/help.js"></script>
+</body>
+</html>
