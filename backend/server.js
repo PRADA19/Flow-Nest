@@ -171,6 +171,10 @@ app.use("/api/tasks", apiLimiter);
 app.use("/api/dashboard", apiLimiter);
 app.use("/api/analytics", apiLimiter);
 app.use("/api/notifications", apiLimiter);
+app.use("/api/support", apiLimiter);
+
+// ================= SUPPORT ROUTES =================
+app.use("/api/support", require("./routes/support"));
 
 // ================= DATABASE =================
 let isOfflineMode = false;

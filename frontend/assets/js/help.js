@@ -48,8 +48,12 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
-    // 3. Category Filter Buttons
+    // 3. Category Filter Buttons (with Product Tour Section Handling)
     const categoryButtons = document.querySelectorAll(".feature-card-btn");
+    const tourSection = document.getElementById("tourSection");
+    const faqSection = document.getElementById("faqSection");
+    const searchSection = document.querySelector(".search-section");
+
     categoryButtons.forEach(btn => {
         btn.addEventListener("click", () => {
             const category = btn.dataset.category;
@@ -58,8 +62,16 @@ document.addEventListener("DOMContentLoaded", () => {
             categoryButtons.forEach(b => b.classList.remove("active"));
             btn.classList.add("active");
 
-            // Filter FAQs
-            filterFAQs(document.getElementById("helpSearchInput").value, category);
+            if (category === "product-tour") {
+                tourSection?.classList.remove("hidden");
+                faqSection?.classList.add("hidden");
+                searchSection?.classList.add("hidden");
+            } else {
+                tourSection?.classList.add("hidden");
+                faqSection?.classList.remove("hidden");
+                searchSection?.classList.remove("hidden");
+                filterFAQs(document.getElementById("helpSearchInput").value, category);
+            }
         });
     });
 
@@ -94,7 +106,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // 5. Action Modal Handlers & Persistent Storage Submissions
+    // 5. Action Modal Handlers & MongoDB API Request / LocalStorage Fallback Submissions
     const modals = {
         support: {
             overlay: document.getElementById("supportModal"),
@@ -135,37 +147,75 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
 
-        // Bind submission handler with LocalStorage persistence
-        m.form.addEventListener("submit", (e) => {
+        // Bind submission handler with API request & local fallback
+        m.form.addEventListener("submit", async (e) => {
             e.preventDefault();
 
-            // Generate deterministic/unique reference code
-            const referenceCode = m.prefix + Math.floor(10000 + Math.random() * 90000);
-            const entryData = {
-                id: referenceCode,
-                timestamp: new Date().toISOString()
-            };
+            const submitBtn = m.form.querySelector(".modal-submit-btn");
+            const originalText = submitBtn.textContent;
+            submitBtn.disabled = true;
+            submitBtn.textContent = "Submitting...";
 
             // Capture all form inputs dynamically
+            const payload = {};
             const formData = new FormData(m.form);
             formData.forEach((value, key) => {
-                // Strip input tag name and save
-                const fieldName = key.replace(/^(support|bug|feature)/i, "").toLowerCase();
-                entryData[fieldName] = value;
+                // Strip input tag prefix (e.g. supportSubject -> subject)
+                const cleanKey = key.replace(/^(support|bug|feature)/i, "");
+                // Lowercase the first letter (e.g. Subject -> subject)
+                const fieldName = cleanKey.charAt(0).toLowerCase() + cleanKey.slice(1);
+                payload[fieldName] = value;
             });
 
-            // Save to LocalStorage
-            try {
-                const existingRecords = JSON.parse(localStorage.getItem(m.storageKey) || "[]");
-                existingRecords.push(entryData);
-                localStorage.setItem(m.storageKey, JSON.stringify(existingRecords));
+            // Map modal key to backend support routes
+            const endpointSuffix = key === "support" ? "contact" : key === "bug" ? "bug" : "feature";
 
-                showToast(`Request submitted successfully! Reference: ${referenceCode}`);
+            try {
+                // Check if user is logged in
+                const isLoggedIn = Boolean(typeof getToken === "function" && getToken());
+                if (!isLoggedIn) {
+                    throw new Error("You must be logged in to submit tickets to MongoDB.");
+                }
+
+                // Submit to backend REST API
+                if (typeof apiFetch !== "function") {
+                    throw new Error("apiFetch utility is not defined.");
+                }
+
+                const data = await apiFetch(`/support/${endpointSuffix}`, {
+                    method: "POST",
+                    body: JSON.stringify(payload)
+                });
+
+                showToast(`Submitted to MongoDB! Ref: ${data.referenceCode}`, 4000, "success");
                 closeModal(m);
                 m.form.reset();
             } catch (err) {
-                console.error("Failed to save support request to localStorage", err);
-                showToast("An error occurred while saving your request. Please try again.");
+                console.warn(`Support API submission failed: ${err.message}. Falling back to localStorage.`);
+
+                // Fallback local storage persistence
+                const referenceCode = m.prefix + Math.floor(10000 + Math.random() * 90000);
+                const entryData = {
+                    id: referenceCode,
+                    timestamp: new Date().toISOString(),
+                    ...payload
+                };
+
+                try {
+                    const existingRecords = JSON.parse(localStorage.getItem(m.storageKey) || "[]");
+                    existingRecords.push(entryData);
+                    localStorage.setItem(m.storageKey, JSON.stringify(existingRecords));
+
+                    showToast(`Saved locally! Ref: ${referenceCode} (Offline Mode)`, 4000, "success");
+                    closeModal(m);
+                    m.form.reset();
+                } catch (localErr) {
+                    console.error("Local storage fallback failed:", localErr);
+                    showToast("Failed to save submission. Please try again.", 5000, "error");
+                }
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
             }
         });
     });
@@ -189,13 +239,23 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     // Toast Notification Manager
-    function showToast(message) {
-        const toast = document.getElementById("toast");
-        if (!toast) return;
-        toast.textContent = message;
-        toast.classList.add("show");
-        setTimeout(() => {
-            toast.classList.remove("show");
-        }, 5000);
+    function showToast(message, duration = 2500, type = "info") {
+        if (typeof window.showToast === "function") {
+            window.showToast(message, duration, type);
+        } else {
+            const toast = document.getElementById("toast");
+            if (!toast) return;
+            toast.textContent = message;
+            
+            // Reset styles
+            toast.className = "toast";
+            if (type === "success") toast.classList.add("success");
+            if (type === "error") toast.classList.add("error");
+            
+            toast.classList.add("show");
+            setTimeout(() => {
+                toast.classList.remove("show");
+            }, duration);
+        }
     }
 });

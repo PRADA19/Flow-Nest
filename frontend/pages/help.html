@@ -164,10 +164,79 @@
                             <div class="feature-card-icon"><i class="ph-bold ph-user-circle"></i></div>
                             <span>Profile & Setup</span>
                         </button>
+                        <button class="feature-card-btn" data-category="product-tour">
+                            <div class="feature-card-icon"><i class="ph-bold ph-video-camera"></i></div>
+                            <span>Product Tour</span>
+                        </button>
+                    </section>
+
+                    <!-- Product Tour Onboarding Section -->
+                    <section class="tour-section hidden" id="tourSection" aria-labelledby="tourHeading">
+                        <div class="tour-header">
+                            <div class="tour-badge"><i class="ph-fill ph-video-camera"></i> Product Tour</div>
+                            <h2 id="tourHeading">Visual Onboarding Guide</h2>
+                            <p class="tour-intro">Welcome to FlowNest! Master your workspace and grow your focus tree in 9 interactive steps.</p>
+                        </div>
+                        <div class="tour-steps-grid">
+                            <div class="tour-step-card">
+                                <div class="tour-step-number">Step 1</div>
+                                <div class="tour-step-icon"><i class="ph-fill ph-plus-circle"></i></div>
+                                <h3>Create your first task</h3>
+                                <p>Navigate to the Tasks tab, type what needs to be done, select priority, and press Enter to save.</p>
+                            </div>
+                            <div class="tour-step-card">
+                                <div class="tour-step-number">Step 2</div>
+                                <div class="tour-step-icon"><i class="ph-fill ph-calendar-blank"></i></div>
+                                <h3>Add due dates and priorities</h3>
+                                <p>Set deadlines and urgency levels (Low/Medium/High) to structure your daily agenda and sync your calendar view.</p>
+                            </div>
+                            <div class="tour-step-card">
+                                <div class="tour-step-number">Step 3</div>
+                                <div class="tour-step-icon"><i class="ph-fill ph-sparkles"></i></div>
+                                <h3>Complete tasks to earn XP</h3>
+                                <p>Tick off items on your list to level up your status, gain XP bonuses, and earn virtual currency coins.</p>
+                            </div>
+                            <div class="tour-step-card">
+                                <div class="tour-step-number">Step 4</div>
+                                <div class="tour-step-icon"><i class="ph-fill ph-tree"></i></div>
+                                <h3>Grow your Focus Tree</h3>
+                                <p>Maintain productivity to watch your seed grow into a stem, branches, leaves, and eventually reach a full flower bloom.</p>
+                            </div>
+                            <div class="tour-step-card">
+                                <div class="tour-step-number">Step 5</div>
+                                <div class="tour-step-icon"><i class="ph-fill ph-fire"></i></div>
+                                <h3>Build streaks</h3>
+                                <p>Finish tasks daily to increment your consecutive productivity streak and receive premium shop tokens.</p>
+                            </div>
+                            <div class="tour-step-card">
+                                <div class="tour-step-number">Step 6</div>
+                                <div class="tour-step-icon"><i class="ph-fill ph-bell-simple-ringing"></i></div>
+                                <h3>Configure reminders</h3>
+                                <p>Manage your notification settings under settings tab to establish custom email, browser, and push alerts.</p>
+                            </div>
+                            <div class="tour-step-card">
+                                <div class="tour-step-number">Step 7</div>
+                                <div class="tour-step-icon"><i class="ph-fill ph-chart-line-up"></i></div>
+                                <h3>Track with Analytics</h3>
+                                <p>Audit your completion metrics, priority distributions, and productivity stats in the dashboard analytics.</p>
+                            </div>
+                            <div class="tour-step-card">
+                                <div class="tour-step-number">Step 8</div>
+                                <div class="tour-step-icon"><i class="ph-fill ph-game-controller"></i></div>
+                                <h3>Use Stress Games</h3>
+                                <p>Take mindful breaks with short, calming games like deep breathing or color tapping directly inside your panel.</p>
+                            </div>
+                            <div class="tour-step-card">
+                                <div class="tour-step-number">Step 9</div>
+                                <div class="tour-step-icon"><i class="ph-fill ph-robot"></i></div>
+                                <h3>Use AI Assistant</h3>
+                                <p>Consult the Gemini AI helper for schedule recommendations, code planning, or sub-task breakdowns.</p>
+                            </div>
+                        </div>
                     </section>
 
                     <!-- Accordion FAQs Section -->
-                    <section class="faq-section" aria-labelledby="faqHeading">
+                    <section class="faq-section" aria-labelledby="faqHeading" id="faqSection">
                         <h2 id="faqHeading">Frequently Asked Questions</h2>
                         <div class="faq-list" id="faqList">
 
@@ -436,7 +505,7 @@
                 </div>
                 <div class="form-group">
                     <label for="featureDesc">Detailed Description</label>
-                    <textarea id="featureDesc" name="featureDesc" rows="5" required placeholder="Explain what the feature does and why it's useful..."></textarea>
+                    <textarea id="featureDesc" name="featureDescription" rows="5" required placeholder="Explain what the feature does and why it's useful..."></textarea>
                 </div>
                 <button type="submit" class="game-btn modal-submit-btn">Submit Idea</button>
             </form>
