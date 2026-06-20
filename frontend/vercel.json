@@ -1,38 +1,20 @@
 {
-  "cleanUrls": true,
   "rewrites": [
     {
       "source": "/api/:path*",
       "destination": "https://flow-nest-2.onrender.com/api/:path*"
     },
     {
-      "source": "/dashboard",
-      "destination": "/pages/dashboard.html"
-    },
-    {
-      "source": "/settings",
-      "destination": "/pages/settings.html"
-    },
-    {
-      "source": "/analytics",
-      "destination": "/pages/analytics.html"
-    },
-    {
-      "source": "/assistant",
-      "destination": "/pages/assistant.html"
-    },
-    {
-      "source": "/games",
-      "destination": "/pages/games.html"
-    },
-    {
-      "source": "/reset-password",
-      "destination": "/pages/reset-password.html"
-    },
-    {
       "source": "/",
       "destination": "/pages/index.html"
-    }
+    },
+    { "source": "/dashboard", "destination": "/pages/dashboard.html" },
+    { "source": "/analytics", "destination": "/pages/analytics.html" },
+    { "source": "/assistant", "destination": "/pages/assistant.html" },
+    { "source": "/help", "destination": "/pages/help.html" },
+    { "source": "/settings", "destination": "/pages/settings.html" },
+    { "source": "/games", "destination": "/pages/games.html" },
+    { "source": "/reset-password", "destination": "/pages/reset-password.html" }
   ],
   "headers": [
     {

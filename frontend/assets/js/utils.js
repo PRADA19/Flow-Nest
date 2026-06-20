@@ -647,8 +647,8 @@ async function fetchAndRenderSidebar() {
         resetSidebarUser();
         return;
     }
-    // If we are on dashboard.html, let dashboard.js handle rendering to prevent double API requests
-    if (window.location.pathname.includes("dashboard.html")) {
+    // If we are on dashboard.html or /dashboard, let dashboard.js handle rendering to prevent double API requests
+    if (window.location.pathname.includes("dashboard")) {
         return;
     }
 

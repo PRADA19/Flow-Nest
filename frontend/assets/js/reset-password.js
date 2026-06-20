@@ -169,7 +169,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             // Redirect back to login screen after 3.5 seconds
             setTimeout(() => {
-                window.location.href = "index.html";
+                window.location.href = "/";
             }, 3500);
 
         } catch (err) {

@@ -10,7 +10,7 @@ self.addEventListener("push", (event) => {
   let payload = {
     title: "SmartTodo Reminder",
     message: "You have a new task notification.",
-    url: "/pages/index.html"
+    url: "/"
   };
 
   if (event.data) {
@@ -24,7 +24,7 @@ self.addEventListener("push", (event) => {
   const options = {
     body: payload.message,
     data: {
-      url: payload.url || "/pages/index.html"
+      url: payload.url || "/"
     },
     badge: "",
     icon: ""
@@ -35,7 +35,7 @@ self.addEventListener("push", (event) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const url = event.notification.data?.url || "/pages/index.html";
+  const url = event.notification.data?.url || "/";
 
   event.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
