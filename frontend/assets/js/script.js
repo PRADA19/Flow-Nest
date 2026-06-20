@@ -23,6 +23,16 @@ let loadedTasks = [];
 let calendar = null;
 let currentView = "list"; // 'list' or 'calendar'
 
+// Edit Task Modal Elements
+const editTaskModal = document.getElementById("editTaskModal");
+const editTaskForm = document.getElementById("editTaskForm");
+const editTaskId = document.getElementById("editTaskId");
+const editTaskTitle = document.getElementById("editTaskTitle");
+const editTaskDueDate = document.getElementById("editTaskDueDate");
+const editTaskPriority = document.getElementById("editTaskPriority");
+const editTaskTag = document.getElementById("editTaskTag");
+const cancelEditBtn = document.getElementById("cancelEditBtn");
+
 // Hook into auth state
 window.onAuthStateChanged = (loggedIn) => {
     if (loggedIn) {
@@ -129,6 +139,9 @@ function renderTasks(tasks) {
                         </div>
                     </div>
                     <div class="task-actions">
+                        <button class="action-btn edit-btn" onclick="event.stopPropagation(); openEditModal('${task._id}')" aria-label="Edit task">
+                            <i class="ph-bold ph-pencil-simple"></i>
+                        </button>
                         <button class="action-btn delete-btn" onclick="event.stopPropagation(); deleteTask('${task._id}')" aria-label="Delete task">
                             <i class="ph-bold ph-trash"></i>
                         </button>
@@ -282,13 +295,110 @@ async function deleteTask(id) {
     }
 }
 
+// Open Edit Modal and pre-populate fields
+function openEditModal(id) {
+    const task = loadedTasks.find(t => t._id === id);
+    if (!task) {
+        showToast("Task not found", 4000, "error");
+        return;
+    }
+    
+    editTaskId.value = task._id;
+    editTaskTitle.value = task.title || "";
+    
+    // Format date to YYYY-MM-DD for <input type="date">
+    if (task.dueDate) {
+        const dateObj = new Date(task.dueDate);
+        const yyyy = dateObj.getFullYear();
+        const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const dd = String(dateObj.getDate()).padStart(2, '0');
+        editTaskDueDate.value = `${yyyy}-${mm}-${dd}`;
+    } else {
+        editTaskDueDate.value = "";
+    }
+    
+    editTaskPriority.value = task.priority || "medium";
+    editTaskTag.value = (task.tags && task.tags.length > 0) ? task.tags[0] : "";
+    
+    editTaskModal?.classList.remove("hidden");
+}
+
+function closeEditModal() {
+    editTaskModal?.classList.add("hidden");
+    editTaskForm?.reset();
+}
+
+async function saveEditTask(event) {
+    if (event) event.preventDefault();
+    
+    const id = editTaskId.value;
+    const title = editTaskTitle.value.trim();
+    
+    if (!title) {
+        showToast("Please enter a task title.");
+        return;
+    }
+    if (title.length < 3) {
+        showToast("Task title must be at least 3 characters.", 4000, "error");
+        return;
+    }
+    
+    const dueDate = editTaskDueDate.value || undefined;
+    const priority = editTaskPriority.value;
+    const tagValue = editTaskTag.value;
+    const tags = tagValue ? [tagValue] : [];
+    
+    const payload = { title, priority, tags };
+    if (dueDate) {
+        payload.dueDate = dueDate;
+    } else {
+        payload.dueDate = null; // Explicitly clear due date if it was removed
+    }
+    
+    const saveBtn = document.getElementById("saveEditBtn");
+    const originalBtnContent = saveBtn ? saveBtn.innerHTML : "Save";
+    if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="ph ph-spinner-gap spinner"></i>';
+    }
+    
+    try {
+        await apiFetch(`${CONFIG.ENDPOINTS.TASKS}/${id}`, {
+            method: "PUT",
+            body: JSON.stringify(payload)
+        });
+        
+        showToast("Task updated successfully", 2000, "success");
+        closeEditModal();
+        fetchTasks();
+    } catch (err) {
+        if (err.message !== "Unauthorized") {
+            showToast(err.message, 4000, "error");
+        }
+    } finally {
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = originalBtnContent;
+        }
+    }
+}
+
 // Expose to window for inline HTML onclick handlers
 window.toggleTaskCompletion = toggleTaskCompletion;
 window.deleteTask = deleteTask;
+window.openEditModal = openEditModal;
 
 /* ======================================================
    EVENT LISTENERS
 ====================================================== */
+
+cancelEditBtn?.addEventListener("click", closeEditModal);
+editTaskForm?.addEventListener("submit", saveEditTask);
+editTaskModal?.addEventListener("click", (e) => {
+    if (e.target === editTaskModal) {
+        closeEditModal();
+    }
+});
 
 addBtn?.addEventListener("click", addTask);
 

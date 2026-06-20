@@ -291,7 +291,9 @@ const connectDB = async (retries = 5, initialDelay = 2000) => {
   }
 };
 
-connectDB();
+if (process.env.NODE_ENV !== "test") {
+  connectDB();
+}
 
 app.use((req, res, next) => {
   if (req.path === "/health") {
@@ -2181,25 +2183,30 @@ process.on("SIGTERM", () => shutdown("SIGTERM"));
 // ================= SERVER =================
 const PORT = process.env.PORT || 5003;
 
-const server = app.listen(PORT, "0.0.0.0", () => {
-  console.log(`🚀 SmartTodo Backend running on port ${PORT}`);
-  console.log(`   Managed by PM2? Run: npm run pm2:status`);
-});
+let server;
+if (process.env.NODE_ENV !== "test") {
+  server = app.listen(PORT, "0.0.0.0", () => {
+    console.log(`🚀 SmartTodo Backend running on port ${PORT}`);
+    console.log(`   Managed by PM2? Run: npm run pm2:status`);
+  });
 
-server.on("error", (err) => {
-  if (err.code === "EADDRINUSE") {
-    console.error(`\n🚨 Port ${PORT} is already in use (EADDRINUSE).`);
-    console.error("   Only ONE backend instance should run on this port.");
-    console.error("\n   Fix:");
-    console.error("     npm run pm2:status     # see if PM2 already runs smarttodo");
-    console.error("     npm run pm2:restart    # restart the PM2 instance");
-    console.error("     npm run pm2:stop       # stop PM2, then npm start\n");
+  server.on("error", (err) => {
+    if (err.code === "EADDRINUSE") {
+      console.error(`\n🚨 Port ${PORT} is already in use (EADDRINUSE).`);
+      console.error("   Only ONE backend instance should run on this port.");
+      console.error("\n   Fix:");
+      console.error("     npm run pm2:status     # see if PM2 already runs smarttodo");
+      console.error("     npm run pm2:restart    # restart the PM2 instance");
+      console.error("     npm run pm2:stop       # stop PM2, then npm start\n");
+      process.exit(1);
+    }
+
+    console.error("Server failed to start:", err);
     process.exit(1);
-  }
+  });
+}
 
-  console.error("Server failed to start:", err);
-  process.exit(1);
-});
+module.exports = app;
 
 // Process-wide unhandled promise rejections and uncaught exception handlers
 process.on("unhandledRejection", (reason, promise) => {

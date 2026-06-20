@@ -229,6 +229,51 @@
         </div>
     </div>
 
+    <!-- Edit Task Modal -->
+    <div id="editTaskModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="icon-container modal-icon">
+                <i class="ph-fill ph-note-pencil"></i>
+            </div>
+            <h2>Edit Task</h2>
+            <p class="tagline modal-tagline">Update your task details.</p>
+
+            <form id="editTaskForm" class="auth-form">
+                <input type="hidden" id="editTaskId">
+                <input type="text" id="editTaskTitle" placeholder="Task Title" required class="styled-select" minlength="3" maxlength="100">
+                
+                <div class="edit-field">
+                    <label for="editTaskDueDate" style="font-size: 12px; margin-bottom: 5px; display: block; color: var(--text-secondary); text-align: left;">Due Date</label>
+                    <input type="date" id="editTaskDueDate" class="styled-select" style="width: 100%;">
+                </div>
+                
+                <div class="edit-field">
+                    <label for="editTaskPriority" style="font-size: 12px; margin-bottom: 5px; display: block; color: var(--text-secondary); text-align: left;">Priority</label>
+                    <select id="editTaskPriority" class="styled-select" style="width: 100%;">
+                        <option value="low">Low Priority</option>
+                        <option value="medium">Medium Priority</option>
+                        <option value="high">High Priority</option>
+                    </select>
+                </div>
+                
+                <div class="edit-field">
+                    <label for="editTaskTag" style="font-size: 12px; margin-bottom: 5px; display: block; color: var(--text-secondary); text-align: left;">Tag</label>
+                    <select id="editTaskTag" class="styled-select" style="width: 100%;">
+                        <option value="">No Tag</option>
+                        <option value="Work">Work</option>
+                        <option value="Study">Study</option>
+                        <option value="Personal">Personal</option>
+                    </select>
+                </div>
+
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    <button type="button" id="cancelEditBtn" class="secondary-btn" style="flex: 1;">Cancel</button>
+                    <button type="submit" id="saveEditBtn" class="primary-btn" style="flex: 1;">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script src="../assets/js/env.config.js"></script>
     <script src="../assets/js/config.js"></script>
     <script src="../assets/js/utils.js"></script>

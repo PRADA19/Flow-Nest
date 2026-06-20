@@ -1127,6 +1127,38 @@ body.tasks-view-calendar .filter-field--tag {
     transform: translateY(-1px);
 }
 
+.secondary-btn {
+    background: rgba(0, 0, 0, 0.05);
+    color: var(--text-primary);
+    border: 1px solid var(--glass-border);
+    border-radius: 14px;
+    padding: 12px 16px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.secondary-btn:hover {
+    background: rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
+}
+
+[data-theme="dark"] .secondary-btn {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
+    border: 1px solid var(--glass-border);
+}
+
+[data-theme="dark"] .secondary-btn:hover {
+    background: rgba(255, 255, 255, 0.10);
+}
+
+.edit-btn:hover {
+    color: white;
+    background: var(--shape-1);
+}
+
 /* =========================================================
    SIDEBAR
 ========================================================= */
