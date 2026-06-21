@@ -233,34 +233,52 @@ function updateFocusGarden(stats) {
     const completionRate = total ? Math.round((completed / total) * 100) : 0;
 
     // Growth stages mapping
-    let stageClass = "stage-0";
+    let stageClass = "stage-seed";
     let stageTitle = "Seed";
     let stageDesc = "Create and complete tasks to sprout your seed!";
 
     if (total === 0) {
-        stageClass = "stage-0";
+        stageClass = "stage-seed";
         stageTitle = "Seed";
         stageDesc = "Create and complete tasks to sprout your seed!";
     } else if (completionRate >= 100) {
-        stageClass = "stage-100";
-        stageTitle = "Full Tree With Flowers";
+        stageClass = "stage-mature";
+        stageTitle = "Mature Tree";
         stageDesc = "Spectacular! Your garden has bloomed beautifully!";
     } else if (completionRate >= 80) {
-        stageClass = "stage-80";
-        stageTitle = "Leaves";
-        stageDesc = "Your tree is lush and full of vibrant green leaves!";
+        stageClass = "stage-growing";
+        stageTitle = "Growing Tree";
+        stageDesc = "Your tree is growing tall and lush with green leaves!";
     } else if (completionRate >= 60) {
-        stageClass = "stage-60";
-        stageTitle = "Tree Structure";
+        stageClass = "stage-young";
+        stageTitle = "Young Tree";
         stageDesc = "The branches are growing stronger, creating a great tree structure.";
     } else if (completionRate >= 40) {
-        stageClass = "stage-40";
-        stageTitle = "Small Branches";
-        stageDesc = "Look! Small branches are beginning to grow outward.";
+        stageClass = "stage-sapling";
+        stageTitle = "Sapling";
+        stageDesc = "Look! A strong young sapling is taking shape.";
     } else if (completionRate >= 20) {
-        stageClass = "stage-20";
-        stageTitle = "Stem";
+        stageClass = "stage-plant";
+        stageTitle = "Small Plant";
         stageDesc = "Your seed has sprouted a stem. Keep up the good work!";
+    } else {
+        stageClass = "stage-sprout";
+        stageTitle = "Sprout";
+        stageDesc = "A tiny sprout has popped out of the soil!";
+    }
+
+    // Check if progress has increased to trigger growth animation
+    const prevRate = Number(gardenCard.dataset.prevCompletionRate ?? -1);
+    gardenCard.dataset.prevCompletionRate = completionRate;
+    
+    if (prevRate !== -1 && completionRate > prevRate) {
+        const treeContainer = gardenCard.querySelector(".garden-tree-container");
+        if (treeContainer) {
+            treeContainer.classList.remove("growth-pulse-active");
+            // Force reflow to restart CSS animation
+            void treeContainer.offsetWidth;
+            treeContainer.classList.add("growth-pulse-active");
+        }
     }
 
     // Update classes on garden card

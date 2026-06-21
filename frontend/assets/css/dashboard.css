@@ -407,195 +407,116 @@ a.sidebar-link.sidebar-link--nav {
 /* Tree SVG elements base rules */
 .focus-garden svg {
     overflow: visible;
-}
-
-.focus-garden .garden-ground {
-    transition: all 0.5s ease;
-}
-
+}.focus-garden .garden-ground,
 .focus-garden .garden-soil {
-    transition: all 0.5s ease;
+    transition: opacity 0.5s ease;
 }
 
-.focus-garden .garden-seed {
-    transform-origin: 100px 177px;
-    transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.5s ease;
+/* Stage visibility classes */
+.focus-garden .garden-seed,
+.focus-garden .garden-sprout,
+.focus-garden .garden-plant,
+.focus-garden .garden-sapling,
+.focus-garden .garden-young,
+.focus-garden .garden-growing,
+.focus-garden .garden-mature {
+    transform-origin: 100px 182px;
+    transition: transform 0.9s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.8s ease, filter 0.5s ease;
+    opacity: 0;
+    transform: scale(0);
+    pointer-events: none;
 }
 
-.focus-garden .garden-trunk {
-    stroke: #78350F;
-    transform-origin: 100px 180px;
-    transition: transform 1s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.8s ease, stroke 0.5s ease;
+/* Stage 1: Seed */
+.focus-garden.stage-seed .garden-seed {
+    opacity: 1;
+    transform: scale(1);
+    animation: seedPulse 2.2s infinite ease-in-out;
+    pointer-events: auto;
 }
 
-.focus-garden .garden-branch {
-    stroke: #78350F;
-    transform-origin: 100px 180px;
-    transition: transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.7s ease, stroke 0.5s ease;
+/* Stage 2: Sprout */
+.focus-garden.stage-sprout .garden-sprout {
+    opacity: 1;
+    transform: scale(1);
+    pointer-events: auto;
 }
 
-.focus-garden .garden-leaves path {
+/* Stage 3: Small Plant */
+.focus-garden.stage-plant .garden-plant {
+    opacity: 1;
+    transform: scale(1);
+    pointer-events: auto;
+}
+
+/* Stage 4: Sapling */
+.focus-garden.stage-sapling .garden-sapling {
+    opacity: 1;
+    transform: scale(1);
+    animation: windSway 7s infinite ease-in-out;
+    pointer-events: auto;
+}
+
+/* Stage 5: Young Tree */
+.focus-garden.stage-young .garden-young {
+    opacity: 1;
+    transform: scale(1);
+    animation: windSway 6s infinite ease-in-out;
+    pointer-events: auto;
+}
+
+/* Stage 6: Growing Tree */
+.focus-garden.stage-growing .garden-growing {
+    opacity: 1;
+    transform: scale(1);
+    animation: windSway 6.5s infinite ease-in-out;
+    pointer-events: auto;
+}
+
+/* Stage 7: Mature Tree */
+.focus-garden.stage-mature .garden-mature {
+    opacity: 1;
+    transform: scale(1);
+    animation: windSway 8s infinite ease-in-out;
+    pointer-events: auto;
+}
+
+/* Flowers bloom in Mature stage only */
+.focus-garden.stage-mature .mature-flower {
     transform-origin: center;
-    transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.6s ease;
+    animation: flowerBloom 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
-.focus-garden .garden-flowers g {
-    transform-origin: center;
-    transition: transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.8s ease;
-}
-
-/* Growth Stages CSS mappings */
-
-/* Stage 0: Seed only */
-.focus-garden.stage-0 .garden-seed {
-    opacity: 1;
-    transform: scale(1);
-    animation: seedPulse 2s infinite ease-in-out;
-}
-.focus-garden.stage-0 .garden-trunk {
-    opacity: 0;
-    transform: scaleY(0);
-}
-.focus-garden.stage-0 .garden-branch {
-    opacity: 0;
-    transform: scale(0);
-}
-.focus-garden.stage-0 .garden-leaves path {
-    opacity: 0;
-    transform: scale(0);
-}
-.focus-garden.stage-0 .garden-flowers g {
-    opacity: 0;
-    transform: scale(0);
-}
-
-/* Stage 20: Stem appears */
-.focus-garden.stage-20 .garden-seed {
-    opacity: 0;
-    transform: scale(0);
-}
-.focus-garden.stage-20 .garden-trunk {
-    opacity: 1;
-    transform: scaleY(0.4);
-}
-.focus-garden.stage-20 .garden-branch {
-    opacity: 0;
-    transform: scale(0);
-}
-.focus-garden.stage-20 .garden-leaves path {
-    opacity: 0;
-    transform: scale(0);
-}
-.focus-garden.stage-20 .garden-flowers g {
-    opacity: 0;
-    transform: scale(0);
-}
-
-/* Stage 40: Small branches appear */
-.focus-garden.stage-40 .garden-seed {
-    opacity: 0;
-    transform: scale(0);
-}
-.focus-garden.stage-40 .garden-trunk {
-    opacity: 1;
-    transform: scaleY(0.75);
-}
-.focus-garden.stage-40 .garden-branch.branch-left-low,
-.focus-garden.stage-40 .garden-branch.branch-right-low {
-    opacity: 1;
-    transform: scale(1);
-}
-.focus-garden.stage-40 .garden-branch.branch-left-high,
-.focus-garden.stage-40 .garden-branch.branch-right-high {
-    opacity: 0;
-    transform: scale(0);
-}
-.focus-garden.stage-40 .garden-leaves path {
-    opacity: 0;
-    transform: scale(0);
-}
-.focus-garden.stage-40 .garden-flowers g {
-    opacity: 0;
-    transform: scale(0);
-}
-
-/* Stage 60: Tree structure */
-.focus-garden.stage-60 .garden-seed {
-    opacity: 0;
-    transform: scale(0);
-}
-.focus-garden.stage-60 .garden-trunk {
-    opacity: 1;
-    transform: scaleY(1);
-}
-.focus-garden.stage-60 .garden-branch {
-    opacity: 1;
-    transform: scale(1);
-}
-.focus-garden.stage-60 .garden-leaves path {
-    opacity: 0;
-    transform: scale(0);
-}
-.focus-garden.stage-60 .garden-flowers g {
-    opacity: 0;
-    transform: scale(0);
-}
-
-/* Stage 80: Leaves appear */
-.focus-garden.stage-80 .garden-seed {
-    opacity: 0;
-    transform: scale(0);
-}
-.focus-garden.stage-80 .garden-trunk {
-    opacity: 1;
-    transform: scaleY(1);
-}
-.focus-garden.stage-80 .garden-branch {
-    opacity: 1;
-    transform: scale(1);
-}
-.focus-garden.stage-80 .garden-leaves path {
-    opacity: 1;
-    transform: scale(1);
-}
-.focus-garden.stage-80 .garden-flowers g {
-    opacity: 0;
-    transform: scale(0);
-}
-
-/* Stage 100: Flowers appear */
-.focus-garden.stage-100 .garden-seed {
-    opacity: 0;
-    transform: scale(0);
-}
-.focus-garden.stage-100 .garden-trunk {
-    opacity: 1;
-    transform: scaleY(1);
-}
-.focus-garden.stage-100 .garden-branch {
-    opacity: 1;
-    transform: scale(1);
-}
-.focus-garden.stage-100 .garden-leaves path {
-    opacity: 1;
-    transform: scale(1);
-}
-.focus-garden.stage-100 .garden-flowers g {
-    opacity: 1;
-    transform: scale(1);
-    animation: flowerBloom 1.2s ease-out forwards;
-}
-
-/* CSS Keyframes */
+/* Animations */
 @keyframes seedPulse {
-    0%, 100% { transform: scale(1); filter: drop-shadow(0 0 2px rgba(180,83,9,0.3)); }
-    50% { transform: scale(1.25); filter: drop-shadow(0 0 8px rgba(180,83,9,0.7)); }
+    0%, 100% { transform: scale(1); filter: drop-shadow(0 0 2px rgba(139, 92, 246, 0.2)); }
+    50% { transform: scale(1.15) translateY(-1px); filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.6)); }
+}
+
+@keyframes windSway {
+    0%, 100% { transform: rotate(0deg) scale(1); }
+    50% { transform: rotate(1.2deg) scale(1.01); }
 }
 
 @keyframes flowerBloom {
-    0% { transform: scale(0) rotate(-30deg); opacity: 0; }
-    60% { transform: scale(1.15) rotate(5deg); opacity: 0.9; }
+    0% { transform: scale(0) rotate(-35deg); opacity: 0; }
+    60% { transform: scale(1.2) rotate(8deg); opacity: 0.9; }
     100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+/* Growth pulse trigger when tasks are completed */
+.focus-garden .garden-tree-container {
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease, background-color 0.3s ease;
+}
+
+.focus-garden .garden-tree-container.growth-pulse-active {
+    animation: growthPulseActive 0.9s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+@keyframes growthPulseActive {
+    0% { transform: scale(1); }
+    25% { transform: scale(1.04); box-shadow: 0 0 15px rgba(52, 211, 153, 0.4); filter: brightness(1.08); }
+    100% { transform: scale(1); }
 }
 
 /* Garden Info & Progress */
@@ -754,9 +675,70 @@ a.sidebar-link.sidebar-link--nav {
     color: var(--text-primary);
 }
 
-[data-theme="dark"] .focus-garden .garden-trunk,
-[data-theme="dark"] .focus-garden .garden-branch {
+[data-theme="dark"] .focus-garden .sprout-stem,
+[data-theme="dark"] .focus-garden .plant-stem,
+[data-theme="dark"] .focus-garden .sapling-stem,
+[data-theme="dark"] .focus-garden .sapling-branch {
     stroke: #D5A980;
+}
+
+[data-theme="dark"] .focus-garden .young-trunk,
+[data-theme="dark"] .focus-garden .growing-trunk,
+[data-theme="dark"] .focus-garden .mature-trunk {
+    fill: #D5A980;
+    stroke: #D5A980;
+}
+
+[data-theme="dark"] .focus-garden .garden-seed ellipse {
+    fill: #D5A980;
+}
+
+[data-theme="dark"] .focus-garden .garden-seed path {
+    fill: #34D399;
+}
+
+[data-theme="dark"] .focus-garden .garden-sprout path:not(.sprout-stem) {
+    fill: #34D399;
+}
+
+[data-theme="dark"] .focus-garden .garden-plant path:not(.plant-stem) {
+    fill: #059669;
+}
+
+[data-theme="dark"] .focus-garden .garden-plant path:nth-child(even) {
+    fill: #34D399;
+}
+
+[data-theme="dark"] .focus-garden .garden-sapling path:not(.sapling-stem):not(.sapling-branch) {
+    fill: #059669;
+}
+
+[data-theme="dark"] .focus-garden .garden-sapling g path:nth-child(even) {
+    fill: #34D399;
+}
+
+[data-theme="dark"] .focus-garden .garden-young path:not([fill="url(#trunkGrad)"]):not([stroke="url(#trunkGrad)"]) {
+    fill: #059669;
+}
+
+[data-theme="dark"] .focus-garden .garden-growing path:not([fill="url(#trunkGrad)"]):not([stroke="url(#trunkGrad)"]) {
+    fill: #047857;
+}
+
+[data-theme="dark"] .focus-garden .garden-mature path:not([fill="url(#trunkGrad)"]):not([stroke="url(#trunkGrad)"]):not(.mature-grass) {
+    fill: #064E3B;
+}
+
+[data-theme="dark"] .focus-garden .garden-mature path:nth-child(odd):not([fill="url(#trunkGrad)"]):not([stroke="url(#trunkGrad)"]):not(.mature-grass) {
+    fill: #10B981;
+}
+
+[data-theme="dark"] .focus-garden .mature-grass {
+    fill: #34D399;
+}
+
+[data-theme="dark"] .focus-garden .garden-tree-container svg {
+    filter: drop-shadow(0 0 8px rgba(52, 211, 153, 0.15));
 }
 
 @media (max-width: 480px) {

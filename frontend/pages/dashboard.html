@@ -151,68 +151,207 @@
                             <!-- Centered Tree SVG Graphic -->
                             <div class="garden-tree-container">
                                 <svg id="gardenTreeSvg" viewBox="0 0 200 200" width="100%" height="100%">
-                                    <!-- Ground & Soil -->
-                                    <ellipse cx="100" cy="180" rx="55" ry="8" fill="#e2e8f0" opacity="0.3" class="garden-ground" />
-                                    <ellipse cx="100" cy="180" rx="24" ry="5" fill="#78350f" opacity="0.85" class="garden-soil" />
-                                    
-                                    <!-- Stage 0: Seed -->
-                                    <circle cx="100" cy="177" r="4.5" fill="#b45309" class="garden-seed" />
-                                    
-                                    <!-- Stage 20: Trunk/Stem -->
-                                    <path d="M 100,180 L 100,80" fill="none" stroke="#78350F" stroke-width="8" stroke-linecap="round" class="garden-trunk" />
-                                    
-                                    <!-- Stage 40 & 60: Branches -->
-                                    <!-- Lower branches (Stage 40) -->
-                                    <path d="M 100,140 Q 82,125 78,118" fill="none" stroke="#78350F" stroke-width="5" stroke-linecap="round" class="garden-branch branch-left-low" />
-                                    <path d="M 100,132 Q 118,118 122,112" fill="none" stroke="#78350F" stroke-width="5" stroke-linecap="round" class="garden-branch branch-right-low" />
-                                    
-                                    <!-- Upper branches (Stage 60) -->
-                                    <path d="M 100,105 Q 82,85 70,82" fill="none" stroke="#78350F" stroke-width="4" stroke-linecap="round" class="garden-branch branch-left-high" />
-                                    <path d="M 100,95 Q 118,75 125,70" fill="none" stroke="#78350F" stroke-width="3.5" stroke-linecap="round" class="garden-branch branch-right-high" />
-                                    
-                                    <!-- Stage 80: Leaves -->
-                                    <g class="garden-leaves">
-                                        <!-- Main trunk top leaves -->
-                                        <path d="M 100,80 Q 90,70 100,60 Q 110,70 100,80 Z" fill="#10B981" />
-                                        <!-- Left low branch leaves -->
-                                        <path d="M 78,118 Q 66,118 70,108 Q 82,108 78,118 Z" fill="#10B981" />
-                                        <path d="M 78,118 Q 70,128 78,128 Q 82,118 78,118 Z" fill="#059669" />
-                                        <!-- Right low branch leaves -->
-                                        <path d="M 122,112 Q 134,112 130,102 Q 118,102 122,112 Z" fill="#10B981" />
-                                        <path d="M 122,112 Q 130,122 122,122 Q 118,112 122,112 Z" fill="#059669" />
-                                        <!-- Left high branch leaves -->
-                                        <path d="M 70,82 Q 58,82 62,72 Q 74,72 70,82 Z" fill="#10B981" />
-                                        <path d="M 70,82 Q 62,92 70,92 Q 74,82 70,82 Z" fill="#059669" />
-                                        <!-- Right high branch leaves -->
-                                        <path d="M 125,70 Q 137,70 133,60 Q 121,60 125,70 Z" fill="#10B981" />
-                                        <path d="M 125,70 Q 121,80 129,80 Q 125,70 125,70 Z" fill="#059669" />
+                                    <defs>
+                                        <!-- Gradients for premium aesthetics -->
+                                        <linearGradient id="soilGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                            <stop offset="0%" stop-color="#5C3D24" />
+                                            <stop offset="100%" stop-color="#3D2514" />
+                                        </linearGradient>
+                                        <linearGradient id="trunkGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                                            <stop offset="0%" stop-color="#6F3B18" />
+                                            <stop offset="30%" stop-color="#8B5A2B" />
+                                            <stop offset="70%" stop-color="#A0522D" />
+                                            <stop offset="100%" stop-color="#5C2E0B" />
+                                        </linearGradient>
+                                        <linearGradient id="leafGradSprout" x1="0%" y1="100%" x2="100%" y2="0%">
+                                            <stop offset="0%" stop-color="#4ADE80" />
+                                            <stop offset="100%" stop-color="#A7F3D0" />
+                                        </linearGradient>
+                                        <linearGradient id="leafGradPlant" x1="0%" y1="100%" x2="100%" y2="0%">
+                                            <stop offset="0%" stop-color="#059669" />
+                                            <stop offset="100%" stop-color="#34D399" />
+                                        </linearGradient>
+                                        <linearGradient id="canopyGradYoung" x1="0%" y1="100%" x2="100%" y2="0%">
+                                            <stop offset="0%" stop-color="#047857" />
+                                            <stop offset="70%" stop-color="#10B981" />
+                                            <stop offset="100%" stop-color="#6EE7B7" />
+                                        </linearGradient>
+                                        <linearGradient id="canopyGradGrowing" x1="0%" y1="100%" x2="100%" y2="0%">
+                                            <stop offset="0%" stop-color="#065F46" />
+                                            <stop offset="60%" stop-color="#059669" />
+                                            <stop offset="100%" stop-color="#34D399" />
+                                        </linearGradient>
+                                        <linearGradient id="canopyGradMature" x1="0%" y1="100%" x2="100%" y2="0%">
+                                            <stop offset="0%" stop-color="#064E3B" />
+                                            <stop offset="50%" stop-color="#047857" />
+                                            <stop offset="90%" stop-color="#10B981" />
+                                            <stop offset="100%" stop-color="#A7F3D0" />
+                                        </linearGradient>
+                                        <radialGradient id="shadowGrad" cx="50%" cy="50%" r="50%">
+                                            <stop offset="0%" stop-color="#1E293B" stop-opacity="0.25" />
+                                            <stop offset="100%" stop-color="#1E293B" stop-opacity="0" />
+                                        </radialGradient>
+                                        <linearGradient id="flowerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                            <stop offset="0%" stop-color="#F472B6" />
+                                            <stop offset="100%" stop-color="#DB2777" />
+                                        </linearGradient>
+                                    </defs>
+
+                                    <!-- Always Visible Ground & Soil -->
+                                    <ellipse cx="100" cy="182" rx="60" ry="7" fill="url(#shadowGrad)" class="garden-ground" />
+                                    <ellipse cx="100" cy="182" rx="26" ry="5.5" fill="url(#soilGrad)" class="garden-soil" />
+
+                                    <!-- Stage 1: Seed -->
+                                    <g class="garden-seed">
+                                        <ellipse cx="100" cy="179" rx="5" ry="3.5" fill="#8B5A2B" transform="rotate(-15, 100, 179)" class="seed-hull" />
+                                        <path d="M 98,177 Q 100,172 103,173 Q 102,178 98,177" fill="#4ADE80" class="seed-sprout-tip" />
                                     </g>
-                                    
-                                    <!-- Stage 100: Flowers -->
-                                    <g class="garden-flowers">
-                                        <!-- Top flower -->
-                                        <g transform="translate(100, 60)" class="flower-top">
-                                            <circle cx="0" cy="0" r="2.5" fill="#FBBF24" />
-                                            <circle cx="-4" cy="0" r="3" fill="#EC4899" opacity="0.85" />
-                                            <circle cx="4" cy="0" r="3" fill="#EC4899" opacity="0.85" />
-                                            <circle cx="0" cy="-4" r="3" fill="#EC4899" opacity="0.85" />
-                                            <circle cx="0" cy="4" r="3" fill="#EC4899" opacity="0.85" />
+
+                                    <!-- Stage 2: Sprout -->
+                                    <g class="garden-sprout">
+                                        <path d="M 100,182 Q 98,168 102,158" fill="none" stroke="url(#trunkGrad)" stroke-width="3" stroke-linecap="round" class="sprout-stem" />
+                                        <!-- Left leaf -->
+                                        <path d="M 102,158 Q 93,155 92,162 Q 98,163 102,158 Z" fill="url(#leafGradSprout)" />
+                                        <!-- Right leaf -->
+                                        <path d="M 102,158 Q 111,152 112,159 Q 106,162 102,158 Z" fill="url(#leafGradSprout)" />
+                                    </g>
+
+                                    <!-- Stage 3: Small Plant -->
+                                    <g class="garden-plant">
+                                        <path d="M 100,182 Q 99,158 101,135" fill="none" stroke="url(#trunkGrad)" stroke-width="4" stroke-linecap="round" class="plant-stem" />
+                                        <!-- Left lower leaf -->
+                                        <path d="M 100,165 Q 89,160 90,167 Q 96,168 100,165 Z" fill="url(#leafGradPlant)" />
+                                        <!-- Right lower leaf -->
+                                        <path d="M 100,157 Q 111,150 112,157 Q 106,159 100,157 Z" fill="url(#leafGradPlant)" />
+                                        <!-- Left upper leaf -->
+                                        <path d="M 100,147 Q 87,143 89,150 Q 95,150 100,147 Z" fill="url(#leafGradPlant)" />
+                                        <!-- Right upper leaf -->
+                                        <path d="M 101,141 Q 111,134 112,141 Q 106,143 101,141 Z" fill="url(#leafGradPlant)" />
+                                        <!-- Top leaf pair -->
+                                        <path d="M 101,135 Q 94,127 96,131 Q 100,133 101,135 Z" fill="url(#leafGradSprout)" />
+                                        <path d="M 101,135 Q 108,127 106,131 Q 102,133 101,135 Z" fill="url(#leafGradSprout)" />
+                                    </g>
+
+                                    <!-- Stage 4: Sapling -->
+                                    <g class="garden-sapling">
+                                        <path d="M 100,182 L 100,110" fill="none" stroke="url(#trunkGrad)" stroke-width="5.5" stroke-linecap="round" class="sapling-stem" />
+                                        <!-- Twigs -->
+                                        <path d="M 100,150 Q 86,140 82,130" fill="none" stroke="url(#trunkGrad)" stroke-width="3" stroke-linecap="round" />
+                                        <path d="M 100,140 Q 114,130 118,118" fill="none" stroke="url(#trunkGrad)" stroke-width="3" stroke-linecap="round" />
+                                        <path d="M 100,125 Q 89,118 85,110" fill="none" stroke="url(#trunkGrad)" stroke-width="2.5" stroke-linecap="round" />
+                                        
+                                        <!-- Top leaf cluster -->
+                                        <g class="sapling-cluster-top">
+                                            <path d="M 100,110 Q 94,100 100,92 Q 106,100 100,110 Z" fill="url(#leafGradPlant)" />
+                                            <path d="M 100,110 Q 88,105 92,100 Q 98,105 100,110 Z" fill="url(#leafGradSprout)" />
+                                            <path d="M 100,110 Q 112,105 108,100 Q 102,105 100,110 Z" fill="url(#leafGradSprout)" />
                                         </g>
-                                        <!-- Left low flower -->
-                                        <g transform="translate(70, 108)" class="flower-left-low">
-                                            <circle cx="0" cy="0" r="2" fill="#FBBF24" />
-                                            <circle cx="-3" cy="0" r="2.5" fill="#EC4899" opacity="0.85" />
-                                            <circle cx="3" cy="0" r="2.5" fill="#EC4899" opacity="0.85" />
-                                            <circle cx="0" cy="-3" r="2.5" fill="#EC4899" opacity="0.85" />
-                                            <circle cx="0" cy="3" r="2.5" fill="#EC4899" opacity="0.85" />
+                                        <!-- Left low cluster -->
+                                        <g class="sapling-cluster-ll">
+                                            <path d="M 82,130 Q 74,133 72,126 Q 78,123 82,130 Z" fill="url(#leafGradPlant)" />
+                                            <path d="M 82,130 Q 80,138 86,136 Q 86,129 82,130 Z" fill="url(#leafGradSprout)" />
+                                            <path d="M 82,130 Q 76,122 82,120 Q 84,127 82,130 Z" fill="url(#leafGradPlant)" />
                                         </g>
-                                        <!-- Right high flower -->
-                                        <g transform="translate(133, 60)" class="flower-right-high">
-                                            <circle cx="0" cy="0" r="2" fill="#FBBF24" />
-                                            <circle cx="-3" cy="0" r="2.5" fill="#EC4899" opacity="0.85" />
-                                            <circle cx="3" cy="0" r="2.5" fill="#EC4899" opacity="0.85" />
-                                            <circle cx="0" cy="-3" r="2.5" fill="#EC4899" opacity="0.85" />
-                                            <circle cx="0" cy="3" r="2.5" fill="#EC4899" opacity="0.85" />
+                                        <!-- Right low cluster -->
+                                        <g class="sapling-cluster-rl">
+                                            <path d="M 118,118 Q 126,115 128,122 Q 122,125 118,118 Z" fill="url(#leafGradPlant)" />
+                                            <path d="M 118,118 Q 120,110 114,112 Q 114,119 118,118 Z" fill="url(#leafGradSprout)" />
+                                            <path d="M 118,118 Q 124,126 118,128 Q 116,121 118,118 Z" fill="url(#leafGradPlant)" />
+                                        </g>
+                                        <!-- Left high cluster -->
+                                        <g class="sapling-cluster-lh">
+                                            <path d="M 85,110 Q 77,110 77,103 Q 83,103 85,110 Z" fill="url(#leafGradPlant)" />
+                                            <path d="M 85,110 Q 81,117 86,116 Q 87,110 85,110 Z" fill="url(#leafGradSprout)" />
+                                        </g>
+                                    </g>
+
+                                    <!-- Stage 5: Young Tree -->
+                                    <g class="garden-young">
+                                        <!-- Trunk -->
+                                        <path d="M 96,182 L 98,105 L 102,105 L 104,182 Z" fill="url(#trunkGrad)" />
+                                        <!-- Branches -->
+                                        <path d="M 98,135 Q 85,125 83,112" fill="none" stroke="url(#trunkGrad)" stroke-width="3.5" stroke-linecap="round" />
+                                        <path d="M 101,125 Q 115,115 117,102" fill="none" stroke="url(#trunkGrad)" stroke-width="3.5" stroke-linecap="round" />
+                                        
+                                        <!-- Canopies -->
+                                        <!-- Lower canopy -->
+                                        <path d="M 70,118 C 58,118 52,102 62,92 C 72,82 88,87 95,95 C 102,87 118,82 128,92 C 138,102 132,118 120,118 Z" fill="url(#canopyGradYoung)" />
+                                        <!-- Upper canopy -->
+                                        <path d="M 85,88 C 76,88 72,76 80,70 C 88,62 98,65 101,71 C 104,65 114,62 119,70 C 124,76 120,88 113,88 Z" fill="url(#canopyGradYoung)" />
+                                    </g>
+
+                                    <!-- Stage 6: Growing Tree -->
+                                    <g class="garden-growing">
+                                        <!-- Trunk -->
+                                        <path d="M 94,182 L 97,92 L 103,92 L 106,182 Z" fill="url(#trunkGrad)" />
+                                        <!-- Branches -->
+                                        <path d="M 97,120 Q 80,105 78,88" fill="none" stroke="url(#trunkGrad)" stroke-width="4.5" stroke-linecap="round" />
+                                        <path d="M 102,110 Q 120,95 122,78" fill="none" stroke="url(#trunkGrad)" stroke-width="4.5" stroke-linecap="round" />
+                                        
+                                        <!-- Canopies -->
+                                        <!-- Lower Left -->
+                                        <path d="M 60,110 C 48,110 42,94 52,84 C 62,74 78,79 84,89 C 84,99 74,110 60,110 Z" fill="url(#canopyGradGrowing)" />
+                                        <!-- Lower Right -->
+                                        <path d="M 115,103 C 103,103 97,87 107,77 C 117,67 133,72 138,82 C 138,92 128,103 115,103 Z" fill="url(#canopyGradGrowing)" />
+                                        <!-- Upper Center -->
+                                        <path d="M 80,78 C 68,78 62,62 72,52 C 82,42 102,42 112,52 C 122,62 117,78 107,78 Z" fill="url(#canopyGradGrowing)" />
+                                    </g>
+
+                                    <!-- Stage 7: Mature Tree -->
+                                    <g class="garden-mature">
+                                        <!-- Trunk -->
+                                        <path d="M 93,182 L 96,75 L 104,75 L 107,182 Z" fill="url(#trunkGrad)" />
+                                        <!-- Branches -->
+                                        <path d="M 96,110 Q 74,100 70,82" fill="none" stroke="url(#trunkGrad)" stroke-width="5" stroke-linecap="round" />
+                                        <path d="M 104,100 Q 126,90 130,72" fill="none" stroke="url(#trunkGrad)" stroke-width="5" stroke-linecap="round" />
+                                        
+                                        <!-- Large Multi-Layered Canopy -->
+                                        <!-- Canopy Bottom Left -->
+                                        <path d="M 55,108 C 38,108 32,87 48,72 C 64,57 80,62 85,77 C 85,92 70,108 55,108 Z" fill="url(#canopyGradMature)" />
+                                        <!-- Canopy Bottom Right -->
+                                        <path d="M 125,98 C 108,98 102,77 118,62 C 134,47 150,57 155,72 C 155,87 138,98 125,98 Z" fill="url(#canopyGradMature)" />
+                                        <!-- Canopy Middle Left -->
+                                        <path d="M 75,76 C 58,76 52,55 68,40 C 84,25 104,30 109,45 C 109,60 89,76 75,76 Z" fill="url(#canopyGradMature)" />
+                                        <!-- Canopy Top Right -->
+                                        <path d="M 105,48 C 93,48 88,33 103,18 C 118,3 133,13 133,28 C 133,43 118,48 105,48 Z" fill="url(#canopyGradMature)" />
+
+                                        <!-- Grass patch at the base -->
+                                        <path d="M 88,182 L 90,176 L 92,182 L 95,173 L 98,182 L 102,182 L 104,174 L 106,182 L 109,176 L 111,182 Z" fill="#22C55E" class="mature-grass" />
+
+                                        <!-- Flowers blooming in Mature Stage (Pink-rose blossom clusters) -->
+                                        <g class="mature-flowers">
+                                            <!-- Flower 1 -->
+                                            <g class="mature-flower" transform="translate(62, 72)">
+                                                <circle cx="0" cy="0" r="2.5" fill="#FBBF24" />
+                                                <circle cx="-3" cy="0" r="2" fill="url(#flowerGrad)" />
+                                                <circle cx="3" cy="0" r="2" fill="url(#flowerGrad)" />
+                                                <circle cx="0" cy="-3" r="2" fill="url(#flowerGrad)" />
+                                                <circle cx="0" cy="3" r="2" fill="url(#flowerGrad)" />
+                                            </g>
+                                            <!-- Flower 2 -->
+                                            <g class="mature-flower" transform="translate(82, 48)">
+                                                <circle cx="0" cy="0" r="2.5" fill="#FBBF24" />
+                                                <circle cx="-3" cy="0" r="2" fill="url(#flowerGrad)" />
+                                                <circle cx="3" cy="0" r="2" fill="url(#flowerGrad)" />
+                                                <circle cx="0" cy="-3" r="2" fill="url(#flowerGrad)" />
+                                                <circle cx="0" cy="3" r="2" fill="url(#flowerGrad)" />
+                                            </g>
+                                            <!-- Flower 3 -->
+                                            <g class="mature-flower" transform="translate(122, 38)">
+                                                <circle cx="0" cy="0" r="2.5" fill="#FBBF24" />
+                                                <circle cx="-3" cy="0" r="2" fill="url(#flowerGrad)" />
+                                                <circle cx="3" cy="0" r="2" fill="url(#flowerGrad)" />
+                                                <circle cx="0" cy="-3" r="2" fill="url(#flowerGrad)" />
+                                                <circle cx="0" cy="3" r="2" fill="url(#flowerGrad)" />
+                                            </g>
+                                            <!-- Flower 4 -->
+                                            <g class="mature-flower" transform="translate(130, 68)">
+                                                <circle cx="0" cy="0" r="2.5" fill="#FBBF24" />
+                                                <circle cx="-3" cy="0" r="2" fill="url(#flowerGrad)" />
+                                                <circle cx="3" cy="0" r="2" fill="url(#flowerGrad)" />
+                                                <circle cx="0" cy="-3" r="2" fill="url(#flowerGrad)" />
+                                                <circle cx="0" cy="3" r="2" fill="url(#flowerGrad)" />
+                                            </g>
                                         </g>
                                     </g>
                                 </svg>
