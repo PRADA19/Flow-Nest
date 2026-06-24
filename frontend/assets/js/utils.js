@@ -576,6 +576,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     verifyBackendConnection();
 
+    const cached = loadUserProfile();
+    if (cached && cached.role) {
+        updateAdminSidebar(cached.role);
+    }
+
     if (getToken()) {
         fetchAndRenderSidebar();
         initNotifications();
@@ -665,9 +670,11 @@ async function fetchAndRenderSidebar() {
         const profile = {
             name: data.userName || cached?.name || "User",
             email: data.email || cached?.email || "",
+            role: data.role || cached?.role || "user"
         };
         saveUserProfile(profile);
         updateSidebarUserName(profile.name);
+        updateAdminSidebar(profile.role);
 
         if (data && data.gamification) {
             updateSidebarGamification(data.gamification, profile.name);
@@ -802,4 +809,33 @@ function triggerLevelUpCelebration(levelInfo) {
         setTimeout(() => modal.remove(), 400);
     });
 }
+
+function updateAdminSidebar(role) {
+    const sidebarNav = document.querySelector(".sidebar-nav");
+    if (!sidebarNav) return;
+
+    const existingAdminLink = sidebarNav.querySelector('a[href="/admin"]');
+    
+    if (role === "admin" || role === "superadmin") {
+        if (!existingAdminLink) {
+            const adminLink = document.createElement("a");
+            adminLink.href = "/admin";
+            adminLink.className = "sidebar-link sidebar-link--nav";
+            adminLink.innerHTML = `
+                <i class="ph-fill ph-shield-checkered"></i>
+                <span>Admin Panel</span>
+            `;
+            const settingsLink = sidebarNav.querySelector('a[href="/settings"]');
+            if (settingsLink) {
+                sidebarNav.insertBefore(adminLink, settingsLink);
+            } else {
+                sidebarNav.appendChild(adminLink);
+            }
+        }
+    } else {
+        existingAdminLink?.remove();
+    }
+}
+
+window.updateAdminSidebar = updateAdminSidebar;
 

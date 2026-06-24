@@ -36,6 +36,9 @@ for (const key of requiredEnv) {
 // ================= MODELS =================
 const Task = require("./models/Task");
 const User = require("./models/User");
+const UserSession = require("./models/UserSession");
+const ActivityLog = require("./models/ActivityLog");
+const crypto = require("crypto");
 const failover = require("./database/sqliteFailover");
 
 // ================= APP =================
@@ -178,6 +181,15 @@ app.use("/api/support", require("./routes/support"));
 
 // ================= AUTH EXTRA ROUTES =================
 app.use("/api/auth", require("./routes/auth"));
+
+// ================= ADMIN ROUTES =================
+const requireRole = require("./middleware/requireRole");
+app.use(
+  "/api/admin",
+  authMiddleware,
+  requireRole(["admin", "superadmin"]),
+  require("./routes/admin")
+);
 
 // ================= DATABASE =================
 let isOfflineMode = false;
@@ -581,6 +593,34 @@ const calculateGamification = async (
   };
 };
 
+const parseUserAgent = (ua) => {
+  if (!ua) return { browser: "Unknown Browser", os: "Unknown OS", device: "Unknown Device" };
+  
+  let os = "Unknown OS";
+  if (ua.includes("Windows")) os = "Windows";
+  else if (ua.includes("Macintosh") || ua.includes("Mac OS")) os = "macOS";
+  else if (ua.includes("Linux")) os = "Linux";
+  else if (ua.includes("Android")) os = "Android";
+  else if (ua.includes("iPhone") || ua.includes("iPad")) os = "iOS";
+
+  let browser = "Unknown Browser";
+  if (ua.includes("Firefox")) browser = "Firefox";
+  else if (ua.includes("Chrome") && !ua.includes("Chromium") && !ua.includes("Edg")) browser = "Chrome";
+  else if (ua.includes("Safari") && !ua.includes("Chrome")) browser = "Safari";
+  else if (ua.includes("Edg")) browser = "Edge";
+  else if (ua.includes("Trident") || ua.includes("MSIE")) browser = "IE";
+
+  let device = "Desktop";
+  if (ua.includes("Mobi") || ua.includes("Android") || ua.includes("iPhone")) {
+    device = "Mobile";
+  }
+  if (ua.includes("iPad")) {
+    device = "Tablet";
+  }
+
+  return { browser, os, device };
+};
+
 // ================= AUTH =================
 
 // REGISTER
@@ -604,11 +644,21 @@ app.post(
       const hashedPassword =
         await bcrypt.hash(password, 10);
 
-      await createUser({
+      const user = await createUser({
         name,
         email: email.toLowerCase(),
         password: hashedPassword,
       });
+
+      if (mongoose.connection.readyState === 1 && user && user._id) {
+        await ActivityLog.create({
+          actorId: user._id,
+          action: "auth_register",
+          ipAddress: req.ip || req.headers["x-forwarded-for"] || req.socket.remoteAddress || "127.0.0.1",
+          userAgent: req.headers["user-agent"],
+          details: { email: user.email }
+        }).catch(err => console.warn("Failed to log registration:", err.message));
+      }
 
       res.status(201).json({
         message:
@@ -636,6 +686,12 @@ app.post(
       if (!user) {
         return res.status(400).json({
           error: "Invalid credentials",
+        });
+      }
+
+      if (user.status === "suspended") {
+        return res.status(403).json({
+          error: "Access denied. Your account is suspended.",
         });
       }
 
@@ -670,6 +726,36 @@ app.post(
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });
 
+      // Create Session and Log Activity in DB
+      if (mongoose.connection.readyState === 1) {
+        try {
+          const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+          const ua = req.headers["user-agent"];
+          const { browser, os, device } = parseUserAgent(ua);
+          const ip = req.ip || req.headers["x-forwarded-for"] || req.socket.remoteAddress || "127.0.0.1";
+
+          await UserSession.create({
+            userId: user._id,
+            tokenHash,
+            device,
+            browser,
+            os,
+            ipAddress: ip,
+            status: "active"
+          });
+
+          await ActivityLog.create({
+            actorId: user._id,
+            action: "auth_login",
+            ipAddress: ip,
+            userAgent: ua,
+            details: { email: user.email, device, browser, os }
+          });
+        } catch (dbErr) {
+          console.warn("Failed to create user session or audit log:", dbErr.message);
+        }
+      }
+
       res.json({
         token,
         user: {
@@ -677,6 +763,7 @@ app.post(
           email: user.email,
           xp: user.xp,
           level: user.level,
+          role: user.role || "user",
         },
       });
     } catch (err) {
@@ -689,7 +776,33 @@ app.post(
 
 // LOGOUT
 app.post("/auth/logout", async (req, res) => {
-  await blacklistToken(extractToken(req));
+  try {
+    const token = extractToken(req);
+    if (token) {
+      await blacklistToken(token);
+
+      if (mongoose.connection.readyState === 1) {
+        const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+        const session = await UserSession.findOneAndUpdate(
+          { tokenHash, status: "active" },
+          { status: "revoked" },
+          { new: true }
+        );
+
+        if (session) {
+          await ActivityLog.create({
+            actorId: session.userId,
+            action: "auth_logout",
+            ipAddress: req.ip || req.headers["x-forwarded-for"] || req.socket.remoteAddress || "127.0.0.1",
+            userAgent: req.headers["user-agent"],
+            details: { sessionId: session._id }
+          }).catch(err => console.warn("Failed to log logout activity:", err.message));
+        }
+      }
+    }
+  } catch (err) {
+    console.error("Session revocation on logout failed:", err.message);
+  }
 
   res.clearCookie("smarttodo_token", {
     httpOnly: true,
@@ -762,6 +875,16 @@ app.post(
         userId: req.user.id,
       });
 
+      if (mongoose.connection.readyState === 1 && task && task._id) {
+        await ActivityLog.create({
+          actorId: req.user.id,
+          action: "task_create",
+          ipAddress: req.ip || req.headers["x-forwarded-for"] || req.socket.remoteAddress || "127.0.0.1",
+          userAgent: req.headers["user-agent"],
+          details: { taskId: task._id, title: task.title }
+        }).catch(err => console.warn("Failed to log task creation:", err.message));
+      }
+
       res.status(201).json(task);
     } catch (err) {
       res.status(500).json({
@@ -810,6 +933,21 @@ app.put(
         userId,
         req.body
       );
+
+      if (mongoose.connection.readyState === 1 && task) {
+        await ActivityLog.create({
+          actorId: userId,
+          action: task.completed && !wasCompleted ? "task_complete" : "task_update",
+          ipAddress: req.ip || req.headers["x-forwarded-for"] || req.socket.remoteAddress || "127.0.0.1",
+          userAgent: req.headers["user-agent"],
+          details: {
+            taskId: task._id,
+            title: task.title,
+            completed: task.completed,
+            wasCompleted
+          }
+        }).catch(err => console.warn("Failed to log task update:", err.message));
+      }
 
       const user = await findUserById(userId);
 
@@ -876,6 +1014,16 @@ app.delete(
         return res.status(404).json({
           error: "Task not found",
         });
+      }
+
+      if (mongoose.connection.readyState === 1) {
+        await ActivityLog.create({
+          actorId: req.user.id,
+          action: "task_delete",
+          ipAddress: req.ip || req.headers["x-forwarded-for"] || req.socket.remoteAddress || "127.0.0.1",
+          userAgent: req.headers["user-agent"],
+          details: { taskId: task._id, title: task.title }
+        }).catch(err => console.warn("Failed to log task deletion:", err.message));
       }
 
       res.json({
@@ -966,6 +1114,7 @@ app.get(
       res.json({
         userName: user.name,
         email: user.email,
+        role: user.role || "user",
         recentTasks,
         insights,
 
@@ -2067,6 +2216,25 @@ Rules:
       }
 
       user = await findUserById(userId);
+
+      if (mongoose.connection.readyState === 1) {
+        const inputTokens = Math.ceil(message.length / 4);
+        const outputTokens = Math.ceil((reply || "").length / 4);
+        const totalTokens = inputTokens + outputTokens;
+
+        await ActivityLog.create({
+          actorId: userId,
+          action: "ai_chat",
+          ipAddress: req.ip || req.headers["x-forwarded-for"] || req.socket.remoteAddress || "127.0.0.1",
+          userAgent: req.headers["user-agent"],
+          details: {
+            messageLength: message.length,
+            replyLength: (reply || "").length,
+            estimatedTokens: totalTokens,
+            actionType: action.type
+          }
+        }).catch(err => console.warn("Failed to log AI activity:", err.message));
+      }
 
       res.json({
         reply,

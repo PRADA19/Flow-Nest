@@ -170,6 +170,23 @@ router.post("/reset-password", authLimiter, async (req, res) => {
     user.password = hashedPassword;
     await user.save();
 
+    // Revoke all active sessions for the user on password reset
+    const UserSession = require("../models/UserSession");
+    const ActivityLog = require("../models/ActivityLog");
+    const mongoose = require("mongoose");
+    
+    if (mongoose.connection.readyState === 1) {
+      await UserSession.updateMany({ userId: user._id, status: "active" }, { status: "revoked" });
+      
+      await ActivityLog.create({
+        actorId: user._id,
+        action: "auth_password_reset",
+        ipAddress: req.ip || req.headers["x-forwarded-for"] || req.socket.remoteAddress || "127.0.0.1",
+        userAgent: req.headers["user-agent"],
+        details: { email: user.email }
+      }).catch(err => console.warn("Failed to log password reset:", err.message));
+    }
+
     // Invalidate/delete all remaining reset tokens for that user
     await PasswordResetToken.deleteMany({ userId: user._id });
 

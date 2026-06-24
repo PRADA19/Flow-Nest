@@ -373,7 +373,12 @@ async function fetchDashboardData() {
         saveUserProfile({
             name: normalized.userName || data.userName || "User",
             email: data.email || loadUserProfile()?.email || "",
+            role: data.role || loadUserProfile()?.role || "user"
         });
+
+        if (typeof updateAdminSidebar === "function") {
+            updateAdminSidebar(data.role || "user");
+        }
 
         renderWelcome(normalized.userName);
         renderStats(normalized.stats);

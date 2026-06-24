@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel — Flow Nest</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="../assets/css/admin.css">
+    <script>
+        // High-speed Frontend Security Guard
+        (function() {
+            try {
+                const token = localStorage.getItem("smarttodo_token");
+                const cache = localStorage.getItem("smarttodo_user_cache");
+                if (!token) {
+                    window.location.replace("/");
+                    return;
+                }
+                const profile = JSON.parse(cache || "{}");
+                if (profile.role !== "admin" && profile.role !== "superadmin") {
+                    window.location.replace("/dashboard");
+                }
+            } catch (e) {
+                window.location.replace("/dashboard");
+            }
+        })();
+    </script>
+</head>
+<body>
+
+    <div class="bg-shape shape-1" aria-hidden="true"></div>
+    <div class="bg-shape shape-2" aria-hidden="true"></div>
+    <div class="bg-shape shape-3" aria-hidden="true"></div>
+
+    <div class="app-layout">
+
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar" aria-label="Main navigation">
+            <div class="sidebar-top">
+                <div class="sidebar-logo">
+                    <div class="sidebar-logo-icon">
+                        <i class="ph-fill ph-check-square-offset"></i>
+                    </div>
+                    <div class="sidebar-logo-text">
+                        <h2>Flow Nest</h2>
+                        <p>Productivity App</p>
+                    </div>
+                </div>
+                <button type="button" class="sidebar-close-btn" id="sidebarCloseBtn" aria-label="Close sidebar">
+                    <i class="ph-bold ph-x"></i>
+                </button>
+            </div>
+
+            <nav class="sidebar-nav" aria-label="App sections">
+                <a href="/dashboard" class="sidebar-link sidebar-link--nav">
+                    <i class="ph-fill ph-house"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="/" class="sidebar-link sidebar-link--nav">
+                    <i class="ph-fill ph-check-circle"></i>
+                    <span>Tasks</span>
+                </a>
+                <a href="/?view=calendar" class="sidebar-link sidebar-link--nav">
+                    <i class="ph-fill ph-calendar"></i>
+                    <span>Calendar</span>
+                </a>
+                <a href="/analytics" class="sidebar-link sidebar-link--nav">
+                    <i class="ph-fill ph-chart-line-up"></i>
+                    <span>Analytics</span>
+                </a>
+                <a href="/assistant" class="sidebar-link sidebar-link--nav">
+                    <i class="ph-fill ph-robot"></i>
+                    <span>AI Assistant</span>
+                </a>
+                <a href="/games" class="sidebar-link sidebar-link--nav">
+                    <i class="ph-fill ph-game-controller"></i>
+                    <span>Mindful Breaks</span>
+                </a>
+                <a href="/help" class="sidebar-link sidebar-link--nav">
+                    <i class="ph-fill ph-question"></i>
+                    <span>Help Center</span>
+                </a>
+                <a href="/settings" class="sidebar-link sidebar-link--nav">
+                    <i class="ph-fill ph-gear"></i>
+                    <span>Settings</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-bottom">
+                <div class="sidebar-user-card">
+                    <div class="user-avatar">
+                        <i class="ph-fill ph-user"></i>
+                    </div>
+                    <div class="user-info">
+                        <span class="user-name" id="sidebarUserName">Guest</span>
+                        <span class="sidebar-level-tag hidden" id="sidebarLevelTag">Lvl 1 Novice</span>
+                    </div>
+                </div>
+                <div class="sidebar-xp-container hidden" id="sidebarXpContainer">
+                    <div class="sidebar-xp-bar-wrapper">
+                        <div class="sidebar-xp-bar" id="sidebarXpBar" style="width: 0%;"></div>
+                    </div>
+                    <span class="sidebar-xp-text" id="sidebarXpText">0 / 100 XP</span>
+                </div>
+            </div>
+        </aside>
+
+        <div class="sidebar-overlay hidden" id="sidebarOverlay" aria-hidden="true"></div>
+
+        <!-- Main Application Area -->
+        <div class="app-main">
+            <header class="app-header app-header--toolbar">
+                <div class="header-content">
+                    <div class="icon-container">
+                        <i class="ph-fill ph-shield-checkered"></i>
+                    </div>
+                    <div class="header-text">
+                        <h1 id="appHeading">Admin Panel</h1>
+                        <p class="header-subtitle" id="appSubheading">System analytics, users, logs, and security logs</p>
+                    </div>
+                </div>
+                
+                <div class="header-actions">
+                    <button type="button" class="action-btn" id="themeToggleBtn" aria-label="Toggle light/dark theme">
+                        <i class="ph-fill ph-moon" id="themeToggleIcon"></i>
+                    </button>
+                    <button type="button" class="action-btn hidden" id="logoutBtn" aria-label="Logout">
+                        <i class="ph-fill ph-sign-out"></i>
+                    </button>
+                </div>
+            </header>
+
+            <main class="app-content admin-layout">
+                <!-- Admin Dashboard Overview Stats Grid -->
+                <section class="admin-stats-grid">
+                    <div class="admin-stat-card glass-card">
+                        <div class="stat-icon users"><i class="ph-fill ph-users"></i></div>
+                        <div class="stat-details">
+                            <h3>Total Users</h3>
+                            <span class="stat-value" id="statTotalUsers">—</span>
+                        </div>
+                    </div>
+                    <div class="admin-stat-card glass-card">
+                        <div class="stat-icon active-users"><i class="ph-fill ph-users-three"></i></div>
+                        <div class="stat-details">
+                            <h3>Active Users (24h)</h3>
+                            <span class="stat-value" id="statActiveUsers">—</span>
+                        </div>
+                    </div>
+                    <div class="admin-stat-card glass-card">
+                        <div class="stat-icon tasks"><i class="ph-fill ph-list-checks"></i></div>
+                        <div class="stat-details">
+                            <h3>Total Tasks</h3>
+                            <span class="stat-value" id="statTotalTasks">—</span>
+                        </div>
+                    </div>
+                    <div class="admin-stat-card glass-card">
+                        <div class="stat-icon completion"><i class="ph-fill ph-check-circle"></i></div>
+                        <div class="stat-details">
+                            <h3>Completed Tasks</h3>
+                            <span class="stat-value" id="statCompletedTasks">—</span>
+                        </div>
+                    </div>
+                    <div class="admin-stat-card glass-card">
+                        <div class="stat-icon tickets"><i class="ph-fill ph-ticket"></i></div>
+                        <div class="stat-details">
+                            <h3>Open Tickets</h3>
+                            <span class="stat-value" id="statOpenTickets">—</span>
+                        </div>
+                    </div>
+                    <div class="admin-stat-card glass-card">
+                        <div class="stat-icon ai"><i class="ph-fill ph-robot"></i></div>
+                        <div class="stat-details">
+                            <h3>AI Chats</h3>
+                            <span class="stat-value" id="statAiChats">—</span>
+                        </div>
+                    </div>
+                    <div class="admin-stat-card glass-card">
+                        <div class="stat-icon sessions"><i class="ph-fill ph-monitor"></i></div>
+                        <div class="stat-details">
+                            <h3>Active Sessions</h3>
+                            <span class="stat-value" id="statActiveSessions">—</span>
+                        </div>
+                    </div>
+                    <div class="admin-stat-card glass-card">
+                        <div class="stat-icon db"><i class="ph-fill ph-database"></i></div>
+                        <div class="stat-details">
+                            <h3>Database Size</h3>
+                            <span class="stat-value" id="statDbSize">—</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Navigation Tabs -->
+                <nav class="admin-tabs" aria-label="Admin panel sections">
+                    <button class="tab-btn active" data-tab="users"><i class="ph-bold ph-user-list"></i> User Management</button>
+                    <button class="tab-btn" data-tab="garden"><i class="ph-bold ph-tree"></i> Focus Garden</button>
+                    <button class="tab-btn" data-tab="ai"><i class="ph-bold ph-sparkles"></i> AI Analytics</button>
+                    <button class="tab-btn" data-tab="tickets"><i class="ph-bold ph-envelope-open"></i> Support SLA</button>
+                    <button class="tab-btn" data-tab="sessions"><i class="ph-bold ph-device-mobile"></i> Session Management</button>
+                    <button class="tab-btn superadmin-only hidden" data-tab="health"><i class="ph-bold ph-heartbeat"></i> System Diagnostics</button>
+                    <button class="tab-btn superadmin-only hidden" data-tab="audit"><i class="ph-bold ph-activity"></i> Audit Logs</button>
+                </nav>
+
+                <!-- Tab Contents -->
+                <div class="tab-panels">
+
+                    <!-- Tab: Users -->
+                    <div class="tab-panel active" id="panel-users">
+                        <div class="panel-header glass-card">
+                            <div class="search-bar">
+                                <i class="ph-bold ph-magnifying-glass"></i>
+                                <input type="text" id="userSearchInput" placeholder="Search users by name or email...">
+                            </div>
+                            <div class="filters">
+                                <select id="userFilterRole">
+                                    <option value="">All Roles</option>
+                                    <option value="user">User</option>
+                                    <option value="admin">Admin</option>
+                                    <option value="superadmin">SuperAdmin</option>
+                                </select>
+                                <select id="userFilterStatus">
+                                    <option value="">All Statuses</option>
+                                    <option value="active">Active</option>
+                                    <option value="suspended">Suspended</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="table-container glass-card">
+                            <table class="admin-table" id="usersTable">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        <th>Role</th>
+                                        <th>Status</th>
+                                        <th>Gamification</th>
+                                        <th>Registration</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td colspan="7" class="loading-row"><i class="ph-bold ph-spinner spinner"></i> Loading users...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="pagination" id="usersPagination"></div>
+                    </div>
+
+                    <!-- Tab: Focus Garden -->
+                    <div class="tab-panel" id="panel-garden">
+                        <div class="panel-grid">
+                            <div class="glass-card chart-container">
+                                <h3>Focus Garden stage Distribution</h3>
+                                <canvas id="gardenChart"></canvas>
+                            </div>
+                            <div class="glass-card text-details">
+                                <h3>Tree Growth System Analytics</h3>
+                                <p>This chart represents the distribution of active users across the 7 stages of Focus Tree development, which corresponds to user levels inside FlowNest.</p>
+                                <ul class="garden-metrics-list" id="gardenStatsList">
+                                    <li>Loading tree stage metrics...</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab: AI Analytics -->
+                    <div class="tab-panel" id="panel-ai">
+                        <div class="panel-grid">
+                            <div class="glass-card chart-container">
+                                <h3>AI API Conversation Trends</h3>
+                                <canvas id="aiConversationsChart"></canvas>
+                            </div>
+                            <div class="glass-card stats-overview">
+                                <h3>AI Operational Costs & Performance</h3>
+                                <div class="ai-kpi-grid">
+                                    <div class="kpi-card">
+                                        <h4>Conversations Count</h4>
+                                        <span class="kpi-value" id="kpiConversationsCount">—</span>
+                                    </div>
+                                    <div class="kpi-card">
+                                        <h4>Estimated Tokens Spent</h4>
+                                        <span class="kpi-value" id="kpiTokensUsed">—</span>
+                                    </div>
+                                    <div class="kpi-card">
+                                        <h4>Estimated LLM API Costs</h4>
+                                        <span class="kpi-value" id="kpiEstimatedCost">—</span>
+                                        <p class="kpi-desc">Calculated at $0.075 / 1M tokens</p>
+                                    </div>
+                                    <div class="kpi-card">
+                                        <h4>Avg System Latency</h4>
+                                        <span class="kpi-value">1.42s</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab: Support SLA -->
+                    <div class="tab-panel" id="panel-tickets">
+                        <div class="table-container glass-card">
+                            <table class="admin-table" id="ticketsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Ticket ID</th>
+                                        <th>User</th>
+                                        <th>Type</th>
+                                        <th>Subject</th>
+                                        <th>Status</th>
+                                        <th>Opened</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td colspan="7" class="loading-row"><i class="ph-bold ph-spinner spinner"></i> Loading support tickets...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Tab: Session Management -->
+                    <div class="tab-panel" id="panel-sessions">
+                        <div class="panel-desc-banner glass-card warning">
+                            <i class="ph-bold ph-warning"></i>
+                            <p><strong>Security Notice:</strong> Revoking an active session will forcefully log the user out on their next action. Users will lose any unsaved local state.</p>
+                        </div>
+                        <div class="table-container glass-card">
+                            <table class="admin-table" id="sessionsTable">
+                                <thead>
+                                    <tr>
+                                        <th>User</th>
+                                        <th>Device / Browser</th>
+                                        <th>OS</th>
+                                        <th>IP Address</th>
+                                        <th>Last Active</th>
+                                        <th>Status</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td colspan="7" class="loading-row"><i class="ph-bold ph-spinner spinner"></i> Loading session registry...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Tab: System Health -->
+                    <div class="tab-panel" id="panel-health">
+                        <div class="health-grid">
+                            <div class="glass-card">
+                                <h3>Backend Diagnostics</h3>
+                                <div class="health-specs" id="healthSpecsBackend">
+                                    <p>Uptime: <strong id="healthUptime">—</strong></p>
+                                    <p>Node Version: <strong id="healthNodeVersion">—</strong></p>
+                                    <p>Platform: <strong id="healthPlatform">—</strong></p>
+                                    <p>Memory RSS: <strong id="healthMemoryRss">—</strong></p>
+                                    <p>Memory Heap: <strong id="healthMemoryHeap">—</strong></p>
+                                </div>
+                            </div>
+                            <div class="glass-card">
+                                <h3>MongoDB Database specs</h3>
+                                <div class="health-specs" id="healthSpecsDb">
+                                    <p>Status: <strong class="online" id="healthDbStatus">—</strong></p>
+                                    <p>Collections: <strong id="healthDbCollections">—</strong></p>
+                                    <p>Data Size: <strong id="healthDbDataSize">—</strong></p>
+                                    <p>Index Size: <strong id="healthDbIndexSize">—</strong></p>
+                                    <p>Storage Size: <strong id="healthDbStorageSize">—</strong></p>
+                                </div>
+                            </div>
+                            <div class="glass-card collection-card">
+                                <h3>MongoDB Collection Sizes</h3>
+                                <ul class="collection-list" id="healthDbCollectionsList">
+                                    <li>Loading collections...</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab: Audit Logs -->
+                    <div class="tab-panel" id="panel-audit">
+                        <div class="panel-header glass-card">
+                            <div class="search-bar">
+                                <i class="ph-bold ph-magnifying-glass"></i>
+                                <input type="text" id="auditSearchInput" placeholder="Filter by user email or action...">
+                            </div>
+                            <div class="filters">
+                                <select id="auditFilterAction">
+                                    <option value="">All Actions</option>
+                                    <option value="auth_login">Login</option>
+                                    <option value="auth_logout">Logout</option>
+                                    <option value="auth_register">Register</option>
+                                    <option value="task_create">Task Create</option>
+                                    <option value="task_update">Task Update</option>
+                                    <option value="task_delete">Task Delete</option>
+                                    <option value="user_suspend">User Suspend</option>
+                                    <option value="user_activate">User Activate</option>
+                                    <option value="role_change">Role Change</option>
+                                    <option value="ticket_update">Ticket SLA Update</option>
+                                    <option value="session_revoke">Session Revoke</option>
+                                    <option value="ai_chat">AI Chat</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="table-container glass-card">
+                            <table class="admin-table" id="auditTable">
+                                <thead>
+                                    <tr>
+                                        <th>Timestamp</th>
+                                        <th>Actor</th>
+                                        <th>Action</th>
+                                        <th>Target</th>
+                                        <th>IP Address</th>
+                                        <th>Metadata Details</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td colspan="6" class="loading-row"><i class="ph-bold ph-spinner spinner"></i> Loading security audit logs...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="pagination" id="auditPagination"></div>
+                    </div>
+
+                </div>
+            </main>
+        </div>
+
+    </div>
+
+    <!-- Ticket Reply Modal -->
+    <div class="modal-overlay hidden" id="ticketModal" role="dialog" aria-modal="true">
+        <div class="modal-content glass-card ticket-reply-modal">
+            <header class="modal-header">
+                <h2 id="ticketModalTitle">Support Ticket Reply</h2>
+                <button type="button" class="modal-close-btn" id="closeTicketModalBtn"><i class="ph-bold ph-x"></i></button>
+            </header>
+            <div class="modal-body">
+                <div class="ticket-meta-block">
+                    <p><strong>From:</strong> <span id="ticketUser">User (user@test.com)</span></p>
+                    <p><strong>Subject:</strong> <span id="ticketSubject">Subject</span></p>
+                    <p><strong>Type:</strong> <span id="ticketType">bug</span></p>
+                    <div class="ticket-description" id="ticketDescription">Description</div>
+                </div>
+                <div class="reply-input-group">
+                    <label for="ticketReplyText">Administrative Reply</label>
+                    <textarea id="ticketReplyText" rows="6" placeholder="Write response to user..."></textarea>
+                </div>
+                <div class="status-select-group">
+                    <label for="ticketStatusSelect">Set Status</label>
+                    <select id="ticketStatusSelect">
+                        <option value="open">Open</option>
+                        <option value="reviewing">Reviewing</option>
+                        <option value="closed">Closed</option>
+                    </select>
+                </div>
+            </div>
+            <footer class="modal-footer">
+                <button type="button" class="btn btn--secondary" id="cancelTicketReplyBtn">Cancel</button>
+                <button type="button" class="btn btn--primary" id="submitTicketReplyBtn">Submit Reply & Update</button>
+            </footer>
+        </div>
+    </div>
+
+    <!-- User Profile Details Modal -->
+    <div class="modal-overlay hidden" id="userModal" role="dialog" aria-modal="true">
+        <div class="modal-content glass-card user-detail-modal">
+            <header class="modal-header">
+                <h2>User Profile Analytics</h2>
+                <button type="button" class="modal-close-btn" id="closeUserModalBtn"><i class="ph-bold ph-x"></i></button>
+            </header>
+            <div class="modal-body">
+                <div class="user-profile-header">
+                    <div class="profile-avatar"><i class="ph-fill ph-user-gear"></i></div>
+                    <div class="profile-meta">
+                        <h3 id="userDetailName">John Doe</h3>
+                        <p id="userDetailEmail">john@doe.com</p>
+                        <span class="user-role-badge" id="userDetailRole">superadmin</span>
+                    </div>
+                </div>
+
+                <div class="user-metrics-dashboard">
+                    <div class="metric-box">
+                        <label>XP</label>
+                        <span id="userDetailXp">320</span>
+                    </div>
+                    <div class="metric-box">
+                        <label>Level</label>
+                        <span id="userDetailLevel">3</span>
+                    </div>
+                    <div class="metric-box">
+                        <label>Streak</label>
+                        <span id="userDetailStreak">5 days</span>
+                    </div>
+                    <div class="metric-box">
+                        <label>Completion Rate</label>
+                        <span id="userDetailCompletion">75%</span>
+                    </div>
+                </div>
+
+                <!-- Admin Action Panels -->
+                <div class="admin-user-controls superadmin-only hidden">
+                    <h4>Administrative Controls</h4>
+                    <div class="controls-actions">
+                        <div class="control-group">
+                            <label for="changeRoleSelect">Update Access Role</label>
+                            <div class="select-btn-group">
+                                <select id="changeRoleSelect">
+                                    <option value="user">User</option>
+                                    <option value="admin">Admin</option>
+                                    <option value="superadmin">SuperAdmin</option>
+                                </select>
+                                <button type="button" class="btn btn--primary btn--sm" id="btnApplyRole">Apply</button>
+                            </div>
+                        </div>
+                        <div class="control-group status-control">
+                            <label>Account Suspension Status</label>
+                            <button type="button" class="btn btn--danger" id="btnToggleUserStatus">Suspend Account</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="user-sessions-log">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <h4 style="margin: 0;">Recent Active Sessions</h4>
+                        <button type="button" class="btn btn--danger btn--sm superadmin-only hidden" id="btnRevokeAllUserSessions">Revoke All</button>
+                    </div>
+                    <div class="session-list-mini" id="userDetailSessionsList">
+                        <p>No active sessions detected.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="../assets/js/env.config.js"></script>
+    <script src="../assets/js/config.js"></script>
+    <script src="../assets/js/utils.js"></script>
+    <script src="../assets/js/auth.js"></script>
+    <script src="../assets/js/admin.js"></script>
+</body>
+</html>

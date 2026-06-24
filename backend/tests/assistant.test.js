@@ -28,12 +28,16 @@ describe('AI Assistant API Endpoints', () => {
   };
 
   beforeAll(async () => {
-    // Wait/reconnect mongoose connection
-    if (mongoose.connection.readyState !== 1) {
-      await mongoose.connect(process.env.MONGO_URI, {
-        serverSelectionTimeoutMS: 30000,
-        maxPoolSize: 15,
-      });
+    // Wait/reconnect mongoose connection robustly
+    while (mongoose.connection.readyState !== 1) {
+      if (mongoose.connection.readyState === 0) {
+        await mongoose.connect(process.env.MONGO_URI, {
+          serverSelectionTimeoutMS: 30000,
+          maxPoolSize: 15,
+        });
+      } else {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
     }
 
     // Register and login to obtain a JWT token

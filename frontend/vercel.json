@@ -14,7 +14,8 @@
     { "source": "/help", "destination": "/pages/help.html" },
     { "source": "/settings", "destination": "/pages/settings.html" },
     { "source": "/games", "destination": "/pages/games.html" },
-    { "source": "/reset-password", "destination": "/pages/reset-password.html" }
+    { "source": "/reset-password", "destination": "/pages/reset-password.html" },
+    { "source": "/admin", "destination": "/pages/admin.html" }
   ],
   "headers": [
     {
