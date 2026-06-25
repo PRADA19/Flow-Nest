@@ -1,9 +1,21 @@
 const nodemailer = require("nodemailer");
+const dns = require("dns");
 
 console.log("[SMTP] Initializing global email service transporter...");
 console.log("[SMTP] Host:", process.env.SMTP_HOST || "smtp.gmail.com");
 console.log("[SMTP] Port:", process.env.SMTP_PORT || 587);
 console.log("[SMTP] User:", process.env.SMTP_USER || "Not Configured");
+console.log("[SMTP] Password Configured:", process.env.SMTP_PASS ? "YES" : "NO");
+console.log("[SMTP] Secure (implicit TLS):", Number(process.env.SMTP_PORT || 587) === 465);
+
+// Asynchronously resolve DNS on startup to audit network connectivity
+dns.lookup(process.env.SMTP_HOST || "smtp.gmail.com", { all: true }, (err, addresses) => {
+  if (err) {
+    console.warn("⚠️ [SMTP] DNS resolution failed for SMTP host:", err.message);
+  } else {
+    console.log("[SMTP] DNS resolution for SMTP host successful:", addresses);
+  }
+});
 
 const transporter = nodemailer.createTransport({
   pool: true, // Reuse SMTP connections instead of opening a new TCP socket per email
@@ -11,16 +23,19 @@ const transporter = nodemailer.createTransport({
   maxMessages: 100,
   host: process.env.SMTP_HOST || "smtp.gmail.com",
   port: Number(process.env.SMTP_PORT || 587),
-  secure: Number(process.env.SMTP_PORT) === 465,
+  secure: Number(process.env.SMTP_PORT || 587) === 465,
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
   },
-  connectionTimeout: 10000, // 10 seconds timeout for establishing TCP connection
-  greetingTimeout: 10000,   // 10 seconds timeout to wait for SMTP greeting
-  socketTimeout: 15000,     // 15 seconds socket inactivity timeout
+  connectionTimeout: 15000, // 15 seconds connection timeout (handles cloud network latency)
+  greetingTimeout: 15000,   // 15 seconds greeting timeout
+  socketTimeout: 20000,     // 20 seconds socket inactivity timeout
   tls: {
     minVersion: "TLSv1.2"      // Enforce secure TLS version for modern providers like Gmail
+  },
+  connectionOptions: {
+    family: 4 // Enforce IPv4 to bypass cloud environments with broken/unconfigured IPv6 routing
   }
 });
 
