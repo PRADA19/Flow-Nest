@@ -1328,28 +1328,7 @@ notificationLogSchema.index({ taskId: 1, offsetMinutes: 1 });
 const NotificationSettings = mongoose.model("NotificationSettings", notificationSettingsSchema);
 const NotificationLog = mongoose.model("NotificationLog", notificationLogSchema);
 
-// ==========================================
-// FLOWNEST NODEMAILER SMTP TRANSPORTER
-// ==========================================
-const nodemailer = require("nodemailer");
-
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || "smtp.gmail.com",
-  port: Number(process.env.SMTP_PORT || 587),
-  secure: Number(process.env.SMTP_PORT) === 465,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
-
-transporter.verify((error, success) => {
-  if (error) {
-    console.warn("⚠️ SMTP connection failed. Email reminders are offline:", error.message);
-  } else {
-    console.log("🚀 SMTP connection successful. Mailer is ready.");
-  }
-});
+const { sendEmail } = require("./services/emailService");
 
 // ==========================================
 // GLOBAL NOTIFICATION SENDER (FCM / PWA Ready)
@@ -1371,6 +1350,12 @@ async function sendNotification(userId, title, body) {
 
     // Email dispatch channel
     if (settings.emailEnabled && user.email) {
+      const clientUrl = process.env.CLIENT_URL || "http://127.0.0.1:5500/frontend";
+      const isLocal = clientUrl.includes("127.0.0.1") || clientUrl.includes("localhost");
+      const settingsUrl = isLocal
+        ? `${clientUrl}/pages/settings.html`
+        : `${clientUrl}/settings`;
+
       const mailOptions = {
         from: process.env.FROM_EMAIL || `"FlowNest Reminders" <${process.env.SMTP_USER}>`,
         to: user.email,
@@ -1388,14 +1373,14 @@ async function sendNotification(userId, title, body) {
               </div>
               <div style="background: #f8fafc; padding: 20px 24px; border-top: 1px solid #e2e8f0; text-align: center; font-size: 12px; color: #94a3b8;">
                 <p style="margin: 0;">You are receiving this because you enabled email reminders on Flow Nest.</p>
-                <p style="margin: 6px 0 0 0;"><a href="file:///d:/Smarttodo/frontend/pages/settings.html" style="color: #8B5CF6; text-decoration: none; font-weight: 600;">Manage Notification Preferences</a></p>
+                <p style="margin: 6px 0 0 0;"><a href="${settingsUrl}" style="color: #8B5CF6; text-decoration: none; font-weight: 600;">Manage Notification Preferences</a></p>
               </div>
             </div>
           </div>
         `
       };
 
-      await transporter.sendMail(mailOptions);
+      await sendEmail(mailOptions);
       emailSent = true;
       console.log(`✉️ Notification email sent to ${user.email}`);
     }

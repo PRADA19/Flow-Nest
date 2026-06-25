@@ -2,30 +2,10 @@ const express = require("express");
 const router = express.Router();
 const crypto = require("crypto");
 const bcrypt = require("bcryptjs");
-const nodemailer = require("nodemailer");
+const { sendEmail } = require("../services/emailService");
 const User = require("../models/User");
 const PasswordResetToken = require("../models/PasswordResetToken");
 const { authLimiter } = require("../middleware/rateLimiter");
-
-// Setup SMTP Transporter using existing configuration settings
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || "smtp.gmail.com",
-  port: Number(process.env.SMTP_PORT || 587),
-  secure: Number(process.env.SMTP_PORT) === 465,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
-
-// Verify SMTP connection config
-transporter.verify((error, success) => {
-  if (error) {
-    console.warn("⚠️ SMTP connection failed in auth route. Password reset emails will log to console:", error.message);
-  } else {
-    console.log("🚀 SMTP connection successful in auth route. Mailer is ready.");
-  }
-});
 
 // Helper for validating email format
 const validateEmail = (email) => {
@@ -79,7 +59,10 @@ router.post("/forgot-password", authLimiter, async (req, res) => {
 
     // Formulate reset URL using CLIENT_URL environment parameter
     const clientUrl = process.env.CLIENT_URL || "http://127.0.0.1:5500/frontend";
-    const resetLink = `${clientUrl}/reset-password?token=${token}`;
+    const isLocal = clientUrl.includes("127.0.0.1") || clientUrl.includes("localhost");
+    const resetLink = isLocal
+      ? `${clientUrl}/pages/reset-password.html?token=${token}`
+      : `${clientUrl}/reset-password?token=${token}`;
 
     const mailOptions = {
       from: process.env.FROM_EMAIL || '"FlowNest" <no-reply@flow-nest.com>',
@@ -112,15 +95,17 @@ router.post("/forgot-password", authLimiter, async (req, res) => {
       `
     };
 
-    // Dispatch email asynchronously
-    transporter.sendMail(mailOptions).catch(err => {
-      console.warn("⚠️ SMTP failed to dispatch password reset email:", err.message);
-    });
-
-    // Development Console Logging fallback
-    console.log(`\n🔑 [PASSWORD RESET LINK] Sent to ${user.email}:\n👉 ${resetLink}\n`);
-
-    return res.status(200).json(genericResponse);
+    try {
+      const info = await sendEmail(mailOptions);
+      console.log(`✓ Password reset email delivered to ${user.email}. Message ID: ${info.messageId}`);
+      if (process.env.NODE_ENV !== "production") {
+        console.log(`🔑 [DEVELOPMENT RESET LINK] Sent to ${user.email}:\n👉 ${resetLink}\n`);
+      }
+      return res.status(200).json(genericResponse);
+    } catch (err) {
+      console.error("❌ Password reset email failed to send:", err.message);
+      return res.status(500).json({ error: "Unable to send password reset email. Please try again." });
+    }
   } catch (err) {
     console.error("Error in forgot-password:", err);
     return res.status(500).json({ error: "An internal error occurred. Please try again later." });
