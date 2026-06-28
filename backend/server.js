@@ -2299,6 +2299,11 @@ app.get("/status", (req, res) => {
   });
 });
 
+// Root API path
+app.get("/", (req, res) => {
+  res.status(200).json({ status: "SmartTodo API running 🚀" });
+});
+
 // ================= GLOBAL ERROR HANDLER =================
 app.use((err, req, res, next) => {
   console.error(err);
