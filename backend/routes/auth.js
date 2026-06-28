@@ -183,108 +183,45 @@ router.post("/reset-password", authLimiter, async (req, res) => {
 });
 
 router.get("/smtp-diagnostic", async (req, res) => {
+  if (process.env.NODE_ENV === "production") {
+    return res.status(404).json({ error: "Not Found" });
+  }
+
   const dns = require("dns");
-  const net = require("net");
-  
-  const diagnostics = {
-    env: {
-      SMTP_HOST: process.env.SMTP_HOST || "smtp.gmail.com",
-      SMTP_PORT: process.env.SMTP_PORT || "587",
-      SMTP_USER: process.env.SMTP_USER || "NOT_SET",
-      SMTP_PASS_EXISTS: !!process.env.SMTP_PASS,
-      FROM_EMAIL: process.env.FROM_EMAIL || "NOT_SET",
-      CLIENT_URL: process.env.CLIENT_URL || "NOT_SET",
-      NODE_ENV: process.env.NODE_ENV || "NOT_SET",
-      secure: Number(process.env.SMTP_PORT || 587) === 465
-    },
-    dns: {},
-    connectivity: {},
-    transporterVerify: null,
-    testEmailSent: null,
-    error: null
-  };
+  const { transporter } = require("../services/emailService");
 
   try {
-    const host = diagnostics.env.SMTP_HOST;
+    const host = process.env.SMTP_HOST;
+    if (!host) {
+      return res.status(500).json({ success: false, error: "SMTP_HOST is not configured" });
+    }
 
     // 1. DNS Resolution Test
-    try {
-      diagnostics.dns.lookup = await new Promise((resolve, reject) => {
-        dns.lookup(host, { all: true }, (err, addresses) => {
-          if (err) reject(err);
-          else resolve(addresses);
-        });
+    await new Promise((resolve, reject) => {
+      dns.lookup(host, (err, address) => {
+        if (err) reject(err);
+        else resolve(address);
       });
-    } catch (dnsErr) {
-      diagnostics.dns.error = dnsErr.message;
-    }
+    });
 
-    // 2. Port Connectivity Test (TCP handshake helper)
-    const testPort = (port) => {
-      return new Promise((resolve) => {
-        const socket = new net.Socket();
-        let status = "unknown";
-        
-        socket.setTimeout(5000);
-        
-        socket.on("connect", () => {
-          status = "open";
-          socket.destroy();
-        });
-        
-        socket.on("timeout", () => {
-          status = "timeout";
-          socket.destroy();
-        });
-        
-        socket.on("error", (err) => {
-          status = `error: ${err.message}`;
-        });
-        
-        socket.on("close", () => {
-          resolve(status);
-        });
-        
-        socket.connect(port, host);
+    // 2. Transporter Verification
+    await new Promise((resolve, reject) => {
+      transporter.verify((err, success) => {
+        if (err) reject(err);
+        else resolve(success);
       });
-    };
+    });
 
-    diagnostics.connectivity["587"] = await testPort(587);
-    diagnostics.connectivity["465"] = await testPort(465);
-    diagnostics.connectivity["25"] = await testPort(25);
-
-    // 3. Transporter verification
-    const { transporter } = require("../services/emailService");
-    try {
-      diagnostics.transporterVerify = await new Promise((resolve, reject) => {
-        transporter.verify((err, success) => {
-          if (err) reject(err);
-          else resolve("success");
-        });
-      });
-    } catch (verifyErr) {
-      diagnostics.transporterVerify = `failed: ${verifyErr.message}`;
-    }
-
-    // 4. Send test email if requested
-    if (req.query.sendTest === "true" && diagnostics.transporterVerify === "success") {
-      const { sendEmail } = require("../services/emailService");
-      try {
-        const info = await sendEmail({
-          to: diagnostics.env.SMTP_USER,
-          subject: "FlowNest SMTP Diagnostic Email",
-          html: "<p>If you see this, the production SMTP configuration is working!</p>"
-        });
-        diagnostics.testEmailSent = `success: ${info.messageId}`;
-      } catch (sendErr) {
-        diagnostics.testEmailSent = `failed: ${sendErr.message}`;
-      }
-    }
-
-    return res.status(200).json({ success: true, diagnostics });
-  } catch (globalErr) {
-    diagnostics.error = globalErr.message;
-    return res.status(500).json({ success: false, diagnostics });
+    return res.status(200).json({
+      success: true,
+      message: "SMTP diagnostics passed: Host resolves and connection verified successfully."
+    });
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      error: "SMTP diagnostics failed",
+      message: err.message
+    });
   }
 });
 
