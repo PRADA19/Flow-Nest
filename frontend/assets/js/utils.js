@@ -862,13 +862,6 @@ async function verifySessionOnStartup() {
         updateSidebarUserName(profile.name);
         updateAdminSidebar(profile.role);
 
-        if (window.location.pathname.includes("admin")) {
-            if (profile.role !== "admin" && profile.role !== "owner") {
-                window.location.replace("/dashboard");
-                return false;
-            }
-        }
-
         if (data.status === "suspended") {
             handleUnauthorized();
             return false;

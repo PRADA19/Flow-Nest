@@ -33,7 +33,7 @@
 
             // Secondary guard validation using fresh server role
             if (typeof window.AuthGuard !== "undefined") {
-                const passesGuard = window.AuthGuard.enforceRouteGuard();
+                const passesGuard = window.AuthGuard.enforceRouteGuard(true);
                 if (!passesGuard) {
                     resolve(false);
                     return;

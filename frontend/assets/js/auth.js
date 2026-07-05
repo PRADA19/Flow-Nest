@@ -179,11 +179,13 @@ function initAuth() {
                 if (!data.token) throw new Error("No token received");
                 setToken(data.token);
 
+                let userRole = "user";
                 if (data.user) {
+                    userRole = data.user.role || "user";
                     saveUserProfile({
                         name: data.user.name,
                         email: data.user.email,
-                        role: data.user.role || "user",
+                        role: userRole,
                         adminRequestStatus: data.user.adminRequestStatus || "none",
                     });
                 }
@@ -197,6 +199,13 @@ function initAuth() {
                 
                 showToast("Logged in successfully.", 2500, "success");
                 setAppState(true);
+
+                // Redirect dynamically based on verified role
+                if (userRole === "admin" || userRole === "owner") {
+                    window.location.replace("/admin");
+                } else {
+                    window.location.replace("/dashboard");
+                }
             } else if (authMode === "register") {
                 showToast("Registration successful. Please login.", 2500, "success");
                 authMode = "login";
