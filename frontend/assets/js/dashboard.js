@@ -373,7 +373,8 @@ async function fetchDashboardData() {
         saveUserProfile({
             name: normalized.userName || data.userName || "User",
             email: data.email || loadUserProfile()?.email || "",
-            role: data.role || loadUserProfile()?.role || "user"
+            role: data.role || loadUserProfile()?.role || "user",
+            adminRequestStatus: data.adminRequestStatus || loadUserProfile()?.adminRequestStatus || "none"
         });
 
         if (typeof updateAdminSidebar === "function") {

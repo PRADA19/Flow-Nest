@@ -670,7 +670,8 @@ async function fetchAndRenderSidebar() {
         const profile = {
             name: data.userName || cached?.name || "User",
             email: data.email || cached?.email || "",
-            role: data.role || cached?.role || "user"
+            role: data.role || cached?.role || "user",
+            adminRequestStatus: data.adminRequestStatus || cached?.adminRequestStatus || "none"
         };
         saveUserProfile(profile);
         updateSidebarUserName(profile.name);
@@ -816,7 +817,7 @@ function updateAdminSidebar(role) {
 
     const existingAdminLink = sidebarNav.querySelector('a[href="/admin"]');
     
-    if (role === "admin" || role === "superadmin") {
+    if (role === "admin" || role === "owner") {
         if (!existingAdminLink) {
             const adminLink = document.createElement("a");
             adminLink.href = "/admin";
@@ -838,4 +839,55 @@ function updateAdminSidebar(role) {
 }
 
 window.updateAdminSidebar = updateAdminSidebar;
+
+async function verifySessionOnStartup() {
+    if (!getToken()) {
+        hideSidebarGamification();
+        resetSidebarUser();
+        if (typeof window.setAppState === "function") {
+            window.setAppState(false);
+        }
+        return false;
+    }
+
+    try {
+        const data = await apiFetch("/auth/me");
+        const profile = {
+            name: data.name || "User",
+            email: data.email || "",
+            role: data.role || "user",
+            adminRequestStatus: data.adminRequestStatus || "none"
+        };
+        saveUserProfile(profile);
+        updateSidebarUserName(profile.name);
+        updateAdminSidebar(profile.role);
+
+        if (window.location.pathname.includes("admin")) {
+            if (profile.role !== "admin" && profile.role !== "owner") {
+                window.location.replace("/dashboard");
+                return false;
+            }
+        }
+
+        if (data.status === "suspended") {
+            handleUnauthorized();
+            return false;
+        }
+
+        // Fetch notifications and sidebar since they are logged in
+        if (typeof initNotifications === "function") {
+            initNotifications();
+        }
+
+        return true;
+    } catch (err) {
+        console.warn("Startup session validation failed:", err.message);
+        if (err.message !== "Unauthorized") {
+            handleUnauthorized();
+        }
+        return false;
+    }
+}
+
+window.verifySessionOnStartup = verifySessionOnStartup;
 

@@ -11,27 +11,41 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="../assets/css/style.css">
     <link rel="stylesheet" href="../assets/css/admin.css">
-    <script>
-        // High-speed Frontend Security Guard
-        (function() {
-            try {
-                const token = localStorage.getItem("smarttodo_token");
-                const cache = localStorage.getItem("smarttodo_user_cache");
-                if (!token) {
-                    window.location.replace("/");
-                    return;
-                }
-                const profile = JSON.parse(cache || "{}");
-                if (profile.role !== "admin" && profile.role !== "superadmin") {
-                    window.location.replace("/dashboard");
-                }
-            } catch (e) {
-                window.location.replace("/dashboard");
-            }
-        })();
-    </script>
+    <style>
+        .app-layout { display: none !important; }
+        .auth-loading-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: #0f172a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            color: #f8fafc;
+            font-family: 'Inter', sans-serif;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .spinner {
+            display: inline-block;
+        }
+    </style>
+    <script src="../assets/js/env.config.js"></script>
+    <script src="../assets/js/config.js"></script>
+    <script src="../assets/js/utils.js"></script>
+    <script src="../assets/js/authGuard.js"></script>
+    <script src="../assets/js/appBoot.js"></script>
 </head>
 <body>
+    <!-- App Loading Screen -->
+    <div id="authLoadingOverlay" class="auth-loading-overlay">
+        <div class="spinner-container" style="text-align: center;">
+            <i class="ph ph-spinner-gap spinner" style="font-size: 40px; animation: spin 1s linear infinite;"></i>
+            <p style="margin-top: 10px; font-weight: 500;">Verifying credentials...</p>
+        </div>
+    </div>
 
     <div class="bg-shape shape-1" aria-hidden="true"></div>
     <div class="bg-shape shape-2" aria-hidden="true"></div>
@@ -222,7 +236,7 @@
                                     <option value="">All Roles</option>
                                     <option value="user">User</option>
                                     <option value="admin">Admin</option>
-                                    <option value="superadmin">SuperAdmin</option>
+                                    <option value="owner">Owner</option>
                                 </select>
                                 <select id="userFilterStatus">
                                     <option value="">All Statuses</option>
@@ -481,7 +495,7 @@
                     <div class="profile-meta">
                         <h3 id="userDetailName">John Doe</h3>
                         <p id="userDetailEmail">john@doe.com</p>
-                        <span class="user-role-badge" id="userDetailRole">superadmin</span>
+                        <span class="user-role-badge" id="userDetailRole">owner</span>
                     </div>
                 </div>
 
@@ -514,7 +528,7 @@
                                 <select id="changeRoleSelect">
                                     <option value="user">User</option>
                                     <option value="admin">Admin</option>
-                                    <option value="superadmin">SuperAdmin</option>
+                                    <option value="owner">Owner</option>
                                 </select>
                                 <button type="button" class="btn btn--primary btn--sm" id="btnApplyRole">Apply</button>
                             </div>

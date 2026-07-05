@@ -118,6 +118,8 @@ async function loadAccountFromDashboard() {
         const profile = {
             name: data.userName || cached?.name || tokenProfile?.name || "User",
             email: data.email || cached?.email || tokenProfile?.email || "—",
+            role: data.role || cached?.role || "user",
+            adminRequestStatus: data.adminRequestStatus || cached?.adminRequestStatus || "none",
         };
         saveCachedProfile(profile);
         renderAccountProfile(profile, true);

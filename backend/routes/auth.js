@@ -6,6 +6,7 @@ const { sendEmail } = require("../services/emailService");
 const User = require("../models/User");
 const PasswordResetToken = require("../models/PasswordResetToken");
 const { authLimiter } = require("../middleware/rateLimiter");
+const authenticateUser = require("../middleware/auth");
 
 // Helper for validating email format
 const validateEmail = (email) => {
@@ -222,6 +223,38 @@ router.get("/smtp-diagnostic", async (req, res) => {
       error: "SMTP diagnostics failed",
       message: err.message
     });
+  }
+});
+
+/**
+ * @route   GET /api/auth/me
+ * @desc    Fetch currently logged-in user profile dynamically from DB
+ * @access  Private
+ */
+router.get("/me", authenticateUser, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ error: "User profile not found." });
+    }
+
+    if (user.status === "suspended") {
+      return res.status(403).json({ error: "Access denied. Your account is suspended." });
+    }
+
+    res.json({
+      id: user._id.toString(),
+      name: user.name,
+      email: user.email,
+      role: user.role || "user",
+      adminRequestStatus: user.adminRequestStatus || "none",
+      xp: user.xp,
+      level: user.level,
+      status: user.status
+    });
+  } catch (err) {
+    console.error("Error in GET /me:", err);
+    res.status(500).json({ error: "Internal server error fetching user profile." });
   }
 });
 

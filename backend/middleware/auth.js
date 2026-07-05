@@ -50,6 +50,11 @@ const authenticateUser = async (req, res, next) => {
         return res.status(401).json({ error: "Account no longer exists." });
       }
 
+      // Validate JWT token version against DB to support instant global revocation (JWT Versioning)
+      if (decoded.version !== undefined && decoded.version !== user.tokenVersion) {
+        return res.status(401).json({ error: "Your session has expired due to privilege changes. Please log in again." });
+      }
+
       if (user.status === "suspended") {
         return res.status(403).json({ error: "Access denied. Your account has been suspended." });
       }
@@ -67,8 +72,9 @@ const authenticateUser = async (req, res, next) => {
       req.user = {
         id: user._id.toString(),
         email: user.email,
-        role: user.role,
-        status: user.status
+        role: user.role || "user",
+        tokenVersion: user.tokenVersion || 1,
+        status: user.status || "active"
       };
     } else {
       // Offline fallback
@@ -76,6 +82,7 @@ const authenticateUser = async (req, res, next) => {
         id: decoded.id,
         email: decoded.email,
         role: "user",
+        tokenVersion: decoded.version || 1,
         status: "active"
       };
     }

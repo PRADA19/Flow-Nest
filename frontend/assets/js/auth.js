@@ -183,6 +183,8 @@ function initAuth() {
                     saveUserProfile({
                         name: data.user.name,
                         email: data.user.email,
+                        role: data.user.role || "user",
+                        adminRequestStatus: data.user.adminRequestStatus || "none",
                     });
                 }
                 
@@ -226,9 +228,15 @@ function initAuth() {
         setAppState(false);
     });
 
-    // Initial check
-    const isLoggedIn = Boolean(getToken());
-    setAppState(isLoggedIn);
+    // Initial check (asynchronous verify session handshake with backend)
+    if (typeof window.verifySessionOnStartup === "function") {
+        window.verifySessionOnStartup().then(isValid => {
+            setAppState(isValid);
+        });
+    } else {
+        const isLoggedIn = Boolean(getToken());
+        setAppState(isLoggedIn);
+    }
 }
 
 document.addEventListener("DOMContentLoaded", initAuth);

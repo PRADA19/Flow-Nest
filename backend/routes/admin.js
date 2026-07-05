@@ -8,6 +8,7 @@ const SystemMetric = require("../models/SystemMetric");
 const Task = require("../models/Task");
 const SupportTicket = require("../models/SupportTicket");
 const requireRole = require("../middleware/requireRole");
+const { invalidateUserSession } = require("../services/sessionService");
 
 // Middleware to block execution if MongoDB connection is not open
 router.use((req, res, next) => {
@@ -109,7 +110,7 @@ const generateDailySnapshot = async (targetDate = new Date()) => {
 };
 
 // CRON TRIGGER ROOT: Force-generate today's metrics
-router.post("/metrics/snapshot", requireRole(["superadmin"]), async (req, res) => {
+router.post("/metrics/snapshot", requireRole(["owner"]), async (req, res) => {
   try {
     const snapshot = await generateDailySnapshot();
     res.json({ message: "Daily metric snapshot generated successfully", snapshot });
@@ -119,7 +120,7 @@ router.post("/metrics/snapshot", requireRole(["superadmin"]), async (req, res) =
 });
 
 // GET /api/admin/summary
-router.get("/summary", requireRole(["admin", "superadmin"]), async (req, res) => {
+router.get("/summary", requireRole(["admin", "owner"]), async (req, res) => {
   try {
     const [totalUsers, totalTasks, completedTasks, openTickets, activeSessions] = await Promise.all([
       User.countDocuments(),
@@ -160,7 +161,7 @@ router.get("/summary", requireRole(["admin", "superadmin"]), async (req, res) =>
 
 // GET /api/admin/analytics
 // Returns historical metrics for charting (Chart.js)
-router.get("/analytics", requireRole(["admin", "superadmin"]), async (req, res) => {
+router.get("/analytics", requireRole(["admin", "owner"]), async (req, res) => {
   try {
     // Ensure we have at least one snapshot for today before querying
     const today = new Date();
@@ -187,7 +188,7 @@ router.get("/analytics", requireRole(["admin", "superadmin"]), async (req, res) 
 
 // GET /api/admin/users
 // Paginated list of users with search filter
-router.get("/users", requireRole(["admin", "superadmin"]), async (req, res) => {
+router.get("/users", requireRole(["admin", "owner"]), async (req, res) => {
   try {
     const page = Math.max(1, parseInt(req.query.page) || 1);
     const limit = Math.max(1, Math.min(100, parseInt(req.query.limit) || 10));
@@ -234,7 +235,7 @@ router.get("/users", requireRole(["admin", "superadmin"]), async (req, res) => {
 
 // GET /api/admin/users/:id
 // Get user details, task metrics, sessions and garden state
-router.get("/users/:id", requireRole(["admin", "superadmin"]), async (req, res) => {
+router.get("/users/:id", requireRole(["admin", "owner"]), async (req, res) => {
   try {
     const user = await User.findById(req.params.id, "-password");
     if (!user) {
@@ -265,8 +266,8 @@ router.get("/users/:id", requireRole(["admin", "superadmin"]), async (req, res) 
 });
 
 // PATCH /api/admin/users/:id/status
-// SuperAdmin Only: Suspend or Reactivate user accounts
-router.patch("/users/:id/status", requireRole(["superadmin"]), async (req, res) => {
+// Owner Only: Suspend or Reactivate user accounts
+router.patch("/users/:id/status", requireRole(["owner"]), async (req, res) => {
   try {
     const { status } = req.body;
     if (!["active", "suspended"].includes(status)) {
@@ -278,32 +279,16 @@ router.patch("/users/:id/status", requireRole(["superadmin"]), async (req, res) 
       return res.status(404).json({ error: "User not found." });
     }
 
-    if (user.role === "superadmin") {
-      return res.status(403).json({ error: "Cannot suspend a SuperAdmin account." });
+    if (user.role === "owner") {
+      return res.status(403).json({ error: "Cannot suspend an owner account." });
     }
 
     const originalStatus = user.status;
     user.status = status;
-    await user.save();
 
-    // If suspending, immediately invalidate all active sessions
-    if (status === "suspended") {
-      await UserSession.updateMany({ userId: user._id }, { status: "revoked" });
-    }
-
-    // Log the administrative action in the immutable audit log
-    await ActivityLog.create({
-      actorId: req.user.id,
-      action: status === "suspended" ? "user_suspend" : "user_activate",
-      targetId: user._id,
-      ipAddress: req.ip || req.headers["x-forwarded-for"] || req.socket.remoteAddress || "127.0.0.1",
-      userAgent: req.headers["user-agent"],
-      details: {
-        email: user.email,
-        originalStatus,
-        newStatus: status
-      }
-    });
+    // Use unified session service to increment tokenVersion & revoke sessions
+    const actionName = status === "suspended" ? "user_suspend" : "user_activate";
+    await invalidateUserSession(user, req, actionName);
 
     res.json({ message: `User status updated to ${status} successfully.`, user });
   } catch (err) {
@@ -312,11 +297,11 @@ router.patch("/users/:id/status", requireRole(["superadmin"]), async (req, res) 
 });
 
 // PATCH /api/admin/users/:id/role
-// SuperAdmin Only: Update user administrative role
-router.patch("/users/:id/role", requireRole(["superadmin"]), async (req, res) => {
+// Owner Only: Update user administrative role
+router.patch("/users/:id/role", requireRole(["owner"]), async (req, res) => {
   try {
     const { role } = req.body;
-    if (!["user", "admin", "superadmin"].includes(role)) {
+    if (!["user", "admin", "owner"].includes(role)) {
       return res.status(400).json({ error: "Invalid role value." });
     }
 
@@ -332,24 +317,9 @@ router.patch("/users/:id/role", requireRole(["superadmin"]), async (req, res) =>
 
     const originalRole = user.role;
     user.role = role;
-    await user.save();
 
-    // Revoke current sessions so they are forced to log in again and load their new role claims
-    await UserSession.updateMany({ userId: user._id }, { status: "revoked" });
-
-    // Log the change
-    await ActivityLog.create({
-      actorId: req.user.id,
-      action: "role_change",
-      targetId: user._id,
-      ipAddress: req.ip || req.headers["x-forwarded-for"] || req.socket.remoteAddress || "127.0.0.1",
-      userAgent: req.headers["user-agent"],
-      details: {
-        email: user.email,
-        originalRole,
-        newRole: role
-      }
-    });
+    // Use unified session service to increment tokenVersion & revoke sessions
+    await invalidateUserSession(user, req, "role_change");
 
     res.json({ message: `User role promoted/demoted to ${role}`, user });
   } catch (err) {
@@ -359,7 +329,7 @@ router.patch("/users/:id/role", requireRole(["superadmin"]), async (req, res) =>
 
 // GET /api/admin/sessions
 // Retrieve all active device session trackers in the system (paginated)
-router.get("/sessions", requireRole(["admin", "superadmin"]), async (req, res) => {
+router.get("/sessions", requireRole(["admin", "owner"]), async (req, res) => {
   try {
     const page = Math.max(1, parseInt(req.query.page) || 1);
     const limit = Math.max(1, Math.min(100, parseInt(req.query.limit) || 20));
@@ -390,7 +360,7 @@ router.get("/sessions", requireRole(["admin", "superadmin"]), async (req, res) =
 
 // GET /api/admin/users/:id/sessions
 // Retrieve all device session trackers for a user
-router.get("/users/:id/sessions", requireRole(["admin", "superadmin"]), async (req, res) => {
+router.get("/users/:id/sessions", requireRole(["admin", "owner"]), async (req, res) => {
   try {
     const sessions = await UserSession.find({ userId: req.params.id }).sort({ lastActive: -1 });
     res.json(sessions);
@@ -400,40 +370,26 @@ router.get("/users/:id/sessions", requireRole(["admin", "superadmin"]), async (r
 });
 
 // DELETE /api/admin/users/:id/sessions
-// SuperAdmin Only: Revoke all active sessions for a user
-router.delete("/users/:id/sessions", requireRole(["superadmin"]), async (req, res) => {
+// Owner Only: Revoke all active sessions for a user
+router.delete("/users/:id/sessions", requireRole(["owner"]), async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
     if (!user) {
       return res.status(404).json({ error: "User not found." });
     }
 
-    const result = await UserSession.updateMany(
-      { userId: user._id, status: "active" },
-      { status: "revoked" }
-    );
+    // Use unified session service to increment tokenVersion & revoke sessions
+    const outcome = await invalidateUserSession(user, req, "session_revoke_all");
 
-    await ActivityLog.create({
-      actorId: req.user.id,
-      action: "session_revoke_all",
-      targetId: user._id,
-      ipAddress: req.ip || req.headers["x-forwarded-for"] || req.socket.remoteAddress || "127.0.0.1",
-      userAgent: req.headers["user-agent"],
-      details: {
-        email: user.email,
-        revokedCount: result.modifiedCount
-      }
-    });
-
-    res.json({ message: `Successfully revoked all (${result.modifiedCount}) active sessions for this user.` });
+    res.json({ message: `Successfully revoked all (${outcome.revokedCount}) active sessions for this user.` });
   } catch (err) {
     res.status(500).json({ error: "Failed to revoke user sessions" });
   }
 });
 
 // DELETE /api/admin/sessions/:id
-// SuperAdmin Only: Forceful session revocation (Remote logout)
-router.delete("/sessions/:id", requireRole(["superadmin"]), async (req, res) => {
+// Owner Only: Forceful session revocation (Remote logout)
+router.delete("/sessions/:id", requireRole(["owner"]), async (req, res) => {
   try {
     const session = await UserSession.findById(req.params.id);
     if (!session) {
@@ -470,7 +426,7 @@ router.delete("/sessions/:id", requireRole(["superadmin"]), async (req, res) => 
 
 // GET /api/admin/tickets
 // Support ticket overview list with SLA sorting (Oldest open first)
-router.get("/tickets", requireRole(["admin", "superadmin"]), async (req, res) => {
+router.get("/tickets", requireRole(["admin", "owner"]), async (req, res) => {
   try {
     // Sort: Open/Reviewing first (oldest first for SLA), then Closed (latest first)
     const tickets = await SupportTicket.find()
@@ -484,7 +440,7 @@ router.get("/tickets", requireRole(["admin", "superadmin"]), async (req, res) =>
 
 // PATCH /api/admin/tickets/:id
 // Manage ticket status and attach administrative responses
-router.patch("/tickets/:id", requireRole(["admin", "superadmin"]), async (req, res) => {
+router.patch("/tickets/:id", requireRole(["admin", "owner"]), async (req, res) => {
   try {
     const { status, replyText } = req.body;
     const ticket = await SupportTicket.findById(req.params.id);
@@ -527,8 +483,8 @@ router.patch("/tickets/:id", requireRole(["admin", "superadmin"]), async (req, r
 });
 
 // GET /api/admin/audit-logs
-// SuperAdmin Only: Paginated searchable audit trail
-router.get("/audit-logs", requireRole(["superadmin"]), async (req, res) => {
+// Owner Only: Paginated searchable audit trail
+router.get("/audit-logs", requireRole(["owner"]), async (req, res) => {
   try {
     const page = Math.max(1, parseInt(req.query.page) || 1);
     const limit = Math.max(1, Math.min(100, parseInt(req.query.limit) || 20));
@@ -588,8 +544,8 @@ router.get("/audit-logs", requireRole(["superadmin"]), async (req, res) => {
 });
 
 // GET /api/admin/system-health
-// SuperAdmin Only: Live diagnostic reporting
-router.get("/system-health", requireRole(["superadmin"]), async (req, res) => {
+// Owner Only: Live diagnostic reporting
+router.get("/system-health", requireRole(["owner"]), async (req, res) => {
   try {
     // 1. Process diagnostic specs
     const memory = process.memoryUsage();

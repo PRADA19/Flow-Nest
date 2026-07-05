@@ -41,13 +41,22 @@ const userSchema = new mongoose.Schema(
     ],
     role: {
       type: String,
-      enum: ["user", "admin", "superadmin"],
+      enum: ["user", "admin", "owner"],
       default: "user"
+    },
+    adminRequestStatus: {
+      type: String,
+      enum: ["none", "pending", "approved", "rejected"],
+      default: "none"
     },
     status: {
       type: String,
       enum: ["active", "suspended"],
       default: "active"
+    },
+    tokenVersion: {
+      type: Number,
+      default: 1
     }
   },
   { timestamps: true }

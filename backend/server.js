@@ -187,8 +187,15 @@ const requireRole = require("./middleware/requireRole");
 app.use(
   "/api/admin",
   authMiddleware,
-  requireRole(["admin", "superadmin"]),
+  requireRole(["admin", "owner"]),
   require("./routes/admin")
+);
+
+// ================= ADMIN APPROVAL REQUEST ROUTES =================
+app.use(
+  "/api/admin-requests",
+  authMiddleware,
+  require("./routes/adminRequests")
 );
 
 // ================= DATABASE =================
@@ -644,10 +651,19 @@ app.post(
       const hashedPassword =
         await bcrypt.hash(password, 10);
 
+      let role = "user";
+      if (mongoose.connection.readyState === 1) {
+        const userCount = await User.countDocuments();
+        if (userCount === 0) {
+          role = "owner";
+        }
+      }
+
       const user = await createUser({
         name,
         email: email.toLowerCase(),
         password: hashedPassword,
+        role,
       });
 
       if (mongoose.connection.readyState === 1 && user && user._id) {
@@ -710,6 +726,7 @@ app.post(
         {
           id: user._id,
           email: user.email,
+          version: user.tokenVersion || 1,
         },
         process.env.JWT_SECRET,
         {
@@ -764,6 +781,7 @@ app.post(
           xp: user.xp,
           level: user.level,
           role: user.role || "user",
+          adminRequestStatus: user.adminRequestStatus || "none",
         },
       });
     } catch (err) {
@@ -1115,6 +1133,7 @@ app.get(
         userName: user.name,
         email: user.email,
         role: user.role || "user",
+        adminRequestStatus: user.adminRequestStatus || "none",
         recentTasks,
         insights,
 

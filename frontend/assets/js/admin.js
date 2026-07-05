@@ -13,7 +13,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // Toggle superadmin UI visibility
-    if (userRole === "superadmin") {
+    if (userRole === "owner") {
         document.querySelectorAll(".superadmin-only").forEach(el => {
             el.classList.remove("hidden");
         });
@@ -197,9 +197,9 @@ async function openUserProfileModal(userId) {
         document.getElementById("userDetailStreak").textContent = `${user.streak ?? 0} days`;
         document.getElementById("userDetailCompletion").textContent = `${data.metrics.completionRate}%`;
 
-        // Load controls if SuperAdmin
+        // Load controls if Owner
         const cache = loadUserProfile();
-        if (cache?.role === "superadmin") {
+        if (cache?.role === "owner") {
             const roleSelect = document.getElementById("changeRoleSelect");
             roleSelect.value = user.role;
 
@@ -230,7 +230,7 @@ async function openUserProfileModal(userId) {
                     <p>${escapeHtml(sess.device)} • ${escapeHtml(sess.browser)} (${escapeHtml(sess.os)})</p>
                     <span>IP: ${escapeHtml(sess.ipAddress)} • Active: ${new Date(sess.lastActive).toLocaleTimeString()}</span>
                 </div>
-                ${sess.status === "active" && cache?.role === "superadmin" ? `
+                ${sess.status === "active" && cache?.role === "owner" ? `
                     <button type="button" class="btn-action-trigger delete" onclick="revokeUserSession('${sess._id}')">
                         <i class="ph-bold ph-power"></i>
                     </button>
@@ -600,7 +600,7 @@ async function fetchSessions(page = 1) {
                 <td>${new Date(sess.lastActive).toLocaleString()}</td>
                 <td><span class="tag-status ${sess.status === 'active' ? 'active' : 'suspended'}">${sess.status}</span></td>
                 <td>
-                    ${sess.status === 'active' && cache?.role === 'superadmin' ? `
+                    ${sess.status === 'active' && cache?.role === 'owner' ? `
                         <button type="button" class="btn btn--danger btn--sm" onclick="revokeSession('${sess._id}')">
                             <i class="ph-bold ph-power"></i> Revoke
                         </button>

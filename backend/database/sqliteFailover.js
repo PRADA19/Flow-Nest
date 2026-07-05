@@ -88,6 +88,7 @@ const createUser = async (userData) => {
     const raw = fs.readFileSync(USERS_FILE, "utf8");
     const users = JSON.parse(raw || "[]");
 
+    const isFirstUser = users.length === 0;
     const newUser = {
       _id: new Types.ObjectId().toString(),
       name: userData.name,
@@ -98,6 +99,9 @@ const createUser = async (userData) => {
       streak: 0,
       unlockedBadges: [],
       completedTasksCount: 0,
+      role: userData.role || (isFirstUser ? "owner" : "user"),
+      adminRequestStatus: userData.adminRequestStatus || "none",
+      status: "active",
       createdAt: new Date(),
       updatedAt: new Date()
     };
