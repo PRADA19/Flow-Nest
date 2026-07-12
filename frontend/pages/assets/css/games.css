@@ -1,0 +1,393 @@
+/* =========================================================
+   STRESS GAMES AND BREATHING STYLES (FlowNest Theme Sync)
+   ========================================================= */
+
+.games-page {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg, 24px);
+    width: 100%;
+}
+
+.game-selector-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 8px;
+}
+
+.game-card-btn {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    color: var(--text-secondary);
+    font-family: 'Outfit', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    text-align: center;
+}
+
+.game-card-btn:hover {
+    transform: translateY(-4px);
+    background: rgba(255, 255, 255, 0.45);
+    border-color: var(--shape-1, #E2AFFF);
+    color: var(--text-primary);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.04);
+}
+
+.game-card-btn.active {
+    background: linear-gradient(135deg, var(--shape-1, #E2AFFF), var(--shape-3, #D0D1FF));
+    color: var(--text-primary);
+    border-color: transparent;
+    box-shadow: 0 10px 25px rgba(208, 209, 255, 0.35);
+}
+
+.game-card-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.25);
+    font-size: 24px;
+    transition: transform 0.3s ease;
+}
+
+.game-card-btn:hover .game-card-icon {
+    transform: scale(1.1);
+}
+
+.game-view {
+    transition: opacity 0.3s ease;
+}
+
+.game-instruction {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin-top: 8px;
+}
+
+.game-section-header {
+    border-bottom: 1px solid var(--glass-border);
+    padding-bottom: var(--spacing-md, 16px);
+    margin-bottom: var(--spacing-lg, 24px);
+}
+
+.game-controls {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-top: 24px;
+    width: 100%;
+}
+
+.game-btn {
+    padding: 10px 24px;
+    font-size: 14px;
+    border-radius: 12px;
+    min-width: 130px;
+    text-align: center;
+}
+
+/* =========================================================
+   1. DEEP BREATHING INTERFACE
+   ========================================================= */
+
+.breathing-workspace {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+}
+
+.breathing-circle-outer {
+    width: 220px;
+    height: 220px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    margin-bottom: 24px;
+}
+
+.breathing-circle {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(226, 175, 255, 0.4) 0%, rgba(208, 209, 255, 0.5) 100%);
+    box-shadow: 0 0 40px rgba(226, 175, 255, 0.3);
+    border: 2px solid rgba(255, 255, 255, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 4s cubic-bezier(0.445, 0.05, 0.55, 0.95), background-color 4s ease;
+}
+
+.breathing-text {
+    font-family: 'Outfit', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.breathing-timer {
+    font-family: 'Outfit', sans-serif;
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-top: 8px;
+    letter-spacing: -1px;
+}
+
+/* Breathing Phases Animation Rules */
+.breathing-circle.inhale {
+    transform: scale(1.8);
+    background: radial-gradient(circle, rgba(147, 197, 253, 0.55) 0%, rgba(59, 130, 246, 0.6) 100%);
+    box-shadow: 0 0 60px rgba(59, 130, 246, 0.45);
+}
+
+.breathing-circle.hold {
+    transform: scale(1.8);
+    background: radial-gradient(circle, rgba(167, 139, 250, 0.55) 0%, rgba(139, 92, 246, 0.6) 100%);
+    box-shadow: 0 0 60px rgba(139, 92, 246, 0.45);
+}
+
+.breathing-circle.exhale {
+    transform: scale(1.0);
+    background: radial-gradient(circle, rgba(226, 175, 255, 0.4) 0%, rgba(208, 209, 255, 0.5) 100%);
+    box-shadow: 0 0 40px rgba(226, 175, 255, 0.3);
+}
+
+/* =========================================================
+   2. BUBBLE WRAP INTERFACE
+   ========================================================= */
+
+.bubblewrap-workspace {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+}
+
+.game-score-banner {
+    background: rgba(255, 255, 255, 0.3);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    padding: 8px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: 24px;
+}
+
+.game-score-banner strong {
+    color: var(--text-primary);
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.bubblewrap-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 12px;
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid var(--glass-border);
+    padding: 24px;
+    border-radius: 24px;
+    box-shadow: var(--shadow-soft);
+    max-width: 380px;
+    width: 100%;
+}
+
+.bubble-wrap-item {
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.7) 0%, rgba(200, 225, 255, 0.75) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    box-shadow: inset 0 3px 6px rgba(255, 255, 255, 0.9), 0 4px 6px rgba(0, 0, 0, 0.05);
+    cursor: pointer;
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.bubble-wrap-item:hover {
+    transform: scale(1.05);
+}
+
+.bubble-wrap-item:active {
+    transform: scale(0.9);
+}
+
+.bubble-wrap-item.popped {
+    background: radial-gradient(circle, rgba(200, 200, 200, 0.2) 0%, rgba(150, 150, 150, 0.25) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.08);
+    transform: scale(0.95);
+    pointer-events: none;
+}
+
+/* =========================================================
+   3. MEMORY MATCH INTERFACE
+   ========================================================= */
+
+.memory-workspace {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+}
+
+.memory-stats {
+    display: flex;
+    gap: 24px;
+}
+
+.memory-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    max-width: 420px;
+    width: 100%;
+    perspective: 800px; /* Crucial for 3D flip card effect */
+    margin-bottom: 24px;
+}
+
+.memory-card {
+    aspect-ratio: 1;
+    cursor: pointer;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.5s ease;
+    border-radius: 14px;
+}
+
+.card-inner {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+    pointer-events: none;
+}
+
+.card-front, .card-back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--glass-border);
+}
+
+.card-front {
+    background: linear-gradient(135deg, rgba(226, 175, 255, 0.3), rgba(208, 209, 255, 0.3));
+    box-shadow: var(--shadow-soft);
+    color: var(--text-secondary);
+    font-size: 22px;
+}
+
+.card-front:hover {
+    background: linear-gradient(135deg, rgba(226, 175, 255, 0.5), rgba(208, 209, 255, 0.5));
+}
+
+.card-back {
+    background: var(--shape-3, #D0D1FF);
+    transform: rotateY(180deg);
+    color: var(--text-primary);
+    font-size: 28px;
+    box-shadow: var(--shadow-soft);
+}
+
+/* Flipped state rules */
+.memory-card.flipped {
+    transform: rotateY(180deg);
+}
+
+.memory-card.matched {
+    pointer-events: none;
+}
+
+.memory-card.matched .card-back {
+    background: var(--success-color, #10b981) !important;
+    color: #ffffff !important;
+    opacity: 0.85;
+}
+
+/* =========================================================
+   DARK MODE COMPATIBILITY
+   ========================================================= */
+
+[data-theme="dark"] .game-card-btn:hover {
+    background: var(--card-bg-hover, rgba(30, 41, 59, 0.6));
+    border-color: var(--shape-1, #DEAAFF);
+}
+
+[data-theme="dark"] .game-score-banner {
+    background: rgba(15, 23, 42, 0.4);
+}
+
+[data-theme="dark"] .bubble-wrap-item {
+    background: radial-gradient(circle, rgba(51, 65, 85, 0.8) 0%, rgba(30, 41, 59, 0.85) 100%);
+    border-color: rgba(255, 255, 255, 0.15);
+    box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.1), 0 4px 6px rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="dark"] .bubble-wrap-item.popped {
+    background: radial-gradient(circle, rgba(15, 23, 42, 0.4) 0%, rgba(10, 15, 30, 0.45) 100%);
+    border-color: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dark"] .card-front {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.5), rgba(15, 23, 42, 0.5));
+    color: var(--text-muted, #64748b);
+}
+
+[data-theme="dark"] .card-back {
+    background: var(--accent-color, #8b5cf6);
+}
+
+/* =========================================================
+   MOBILE RESPONSIVENESS
+   ========================================================= */
+
+@media (max-width: 640px) {
+    .game-selector-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .bubblewrap-grid {
+        grid-template-columns: repeat(6, 1fr);
+        gap: 8px;
+        padding: 16px;
+    }
+
+    .memory-grid {
+        gap: 8px;
+    }
+    
+    .breathing-circle-outer {
+        width: 160px;
+        height: 160px;
+    }
+
+    .breathing-circle.inhale,
+    .breathing-circle.hold {
+        transform: scale(1.4);
+    }
+}
