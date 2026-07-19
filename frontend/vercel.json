@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://flow-nest-2.onrender.com/api/:path*"
+      "destination": "https://flow-nest-1.onrender.com/api/:path*"
     },
     {
       "source": "/",

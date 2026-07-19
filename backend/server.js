@@ -82,8 +82,10 @@ addOrigin(process.env.FRONTEND_URL);
 addOrigin(process.env.CLIENT_URL);
 addOrigin(process.env.ALLOWED_ORIGINS);
 
-// Always allow local development origins alongside production allowed origins
+// Always allow local development and Capacitor origins alongside production allowed origins
 const localOrigins = [
+  "http://localhost",
+  "capacitor://localhost",
   "http://localhost:5500",
   "http://127.0.0.1:5500",
   "http://localhost:5501",
